@@ -1,0 +1,74 @@
+- generic [ref=e36]:
+  - complementary [ref=e37]:
+    - link "BusNet Admin" [ref=e39] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e40]:
+      - link "Dashboard" [ref=e41] [cursor=pointer]:
+        - /url: /
+        - img [ref=e42]
+        - text: Dashboard
+      - link "Users" [ref=e47] [cursor=pointer]:
+        - /url: /users
+        - img [ref=e48]
+        - text: Users
+      - link "Partners" [ref=e53] [cursor=pointer]:
+        - /url: /partners
+        - img [ref=e54]
+        - text: Partners
+      - link "Reports" [ref=e58] [cursor=pointer]:
+        - /url: /reports
+        - img [ref=e59]
+        - text: Reports
+      - link "Subscriptions" [ref=e61] [cursor=pointer]:
+        - /url: /subscriptions
+        - img [ref=e62]
+        - text: Subscriptions
+      - link "Settings" [ref=e64] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e65]
+        - text: Settings
+  - generic [ref=e68]:
+    - banner [ref=e69]:
+      - generic [ref=e70]:
+        - heading "Admin Panel" [level=1] [ref=e71]
+        - paragraph [ref=e72]: Manage BusNet system data
+      - button "Logout" [ref=e73]:
+        - img [ref=e74]
+        - text: Logout
+    - main [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e79]:
+          - heading "Dashboard" [level=2] [ref=e80]
+          - paragraph [ref=e81]: Overview of BusNet system
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - generic [ref=e85]: Users
+            - paragraph [ref=e87]: "1"
+          - generic [ref=e88]:
+            - generic [ref=e90]: Partners
+            - paragraph [ref=e92]: "1"
+          - generic [ref=e93]:
+            - generic [ref=e95]: Reports
+            - paragraph [ref=e97]: "0"
+          - generic [ref=e98]:
+            - generic [ref=e100]: Revenue
+            - paragraph [ref=e102]: 0đ
+        - generic [ref=e103]:
+          - generic [ref=e105]: My Profile
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - img [ref=e109]
+              - generic [ref=e113]:
+                - paragraph [ref=e114]: Test Admin
+                - paragraph [ref=e115]: "@testadmin"
+            - generic [ref=e116]:
+              - generic [ref=e117]:
+                - img [ref=e118]
+                - text: testadmin@busnet.com
+              - generic [ref=e121]:
+                - img [ref=e122]
+                - text: Administrator
+              - generic [ref=e125]:
+                - generic [ref=e126]: "Status:"
+                - generic [ref=e127]: ACTIVE
+              - generic [ref=e128]: "Last login: 6/16/2026, 5:49:57 AM"

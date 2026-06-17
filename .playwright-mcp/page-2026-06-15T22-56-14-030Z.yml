@@ -1,0 +1,78 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - link "BusNet Admin" [ref=e6] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e7]:
+      - link "Dashboard" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - img [ref=e9]
+        - text: Dashboard
+      - link "Users" [ref=e14] [cursor=pointer]:
+        - /url: /users
+        - img [ref=e15]
+        - text: Users
+      - link "Partners" [ref=e20] [cursor=pointer]:
+        - /url: /partners
+        - img [ref=e21]
+        - text: Partners
+      - link "Reports" [ref=e25] [cursor=pointer]:
+        - /url: /reports
+        - img [ref=e26]
+        - text: Reports
+      - link "Subscriptions" [ref=e28] [cursor=pointer]:
+        - /url: /subscriptions
+        - img [ref=e29]
+        - text: Subscriptions
+      - link "Settings" [ref=e31] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e32]
+        - text: Settings
+  - generic [ref=e35]:
+    - banner [ref=e36]:
+      - generic [ref=e37]:
+        - heading "Admin Panel" [level=1] [ref=e38]
+        - paragraph [ref=e39]: Manage BusNet system data
+      - button "Logout" [ref=e40]:
+        - img [ref=e41]
+        - text: Logout
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Account Settings" [level=2] [ref=e47]
+          - paragraph [ref=e48]: Manage your admin account information and security.
+        - generic [ref=e52]:
+          - tablist [ref=e53]:
+            - tab "Profile" [selected] [ref=e54]
+            - tab "Security" [ref=e55]
+          - tabpanel "Profile" [ref=e56]:
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]: Account Information
+                - generic [ref=e137]: Update your display name, username, and avatar.
+              - generic [ref=e138]:
+                - alert [ref=e170]: Profile updated successfully
+                - generic [ref=e139]:
+                  - img [ref=e140]
+                  - button "Change Avatar" [ref=e145]
+                - generic [ref=e146]:
+                  - generic [ref=e147]:
+                    - generic [ref=e148]:
+                      - generic [ref=e149]: Full Name
+                      - textbox "Full Name" [active] [ref=e150]: Test Admin Updated
+                    - generic [ref=e151]:
+                      - generic [ref=e152]: Username
+                      - textbox "Username" [ref=e153]: testadmin
+                  - generic [ref=e154]:
+                    - generic [ref=e155]: Email
+                    - generic [ref=e156]:
+                      - generic [ref=e157]:
+                        - img [ref=e158]
+                        - text: testadmin@busnet.com
+                      - generic [ref=e161]: Not verified
+                      - button "Verify Email" [ref=e162]
+                  - generic [ref=e163]:
+                    - generic [ref=e164]:
+                      - img [ref=e165]
+                      - text: Administrator
+                    - generic [ref=e168]: ACTIVE
+                  - button "Save Changes" [ref=e169]

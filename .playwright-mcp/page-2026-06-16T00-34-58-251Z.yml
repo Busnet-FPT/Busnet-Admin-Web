@@ -1,0 +1,94 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img "BusNet" [ref=e7]
+      - generic [ref=e8]: BusNet Admin
+    - navigation [ref=e9]:
+      - paragraph [ref=e10]: Menu
+      - list [ref=e11]:
+        - listitem [ref=e12]:
+          - link "Dashboard" [ref=e13] [cursor=pointer]:
+            - /url: /
+            - img [ref=e14]
+            - text: Dashboard
+        - listitem [ref=e19]:
+          - link "Users" [ref=e20] [cursor=pointer]:
+            - /url: /users
+            - img [ref=e21]
+            - text: Users
+        - listitem [ref=e26]:
+          - link "Partners" [ref=e27] [cursor=pointer]:
+            - /url: /partners
+            - img [ref=e28]
+            - text: Partners
+        - listitem [ref=e32]:
+          - link "Reports" [ref=e33] [cursor=pointer]:
+            - /url: /reports
+            - img [ref=e34]
+            - text: Reports
+        - listitem [ref=e36]:
+          - link "Subscriptions" [ref=e37] [cursor=pointer]:
+            - /url: /subscriptions
+            - img [ref=e38]
+            - text: Subscriptions
+        - listitem [ref=e40]:
+          - link "Settings" [ref=e41] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e42]
+            - text: Settings
+    - generic [ref=e46]:
+      - generic [ref=e47]: B
+      - generic [ref=e48]:
+        - paragraph [ref=e49]: BusNet Admin
+        - paragraph [ref=e50]: Administrator
+      - button "Sign out" [ref=e51]:
+        - img [ref=e52]
+  - generic [ref=e55]:
+    - banner [ref=e56]:
+      - generic [ref=e57]:
+        - generic [ref=e58]: Admin Console
+        - generic [ref=e59]: /
+        - generic [ref=e60]: BusNet Management
+    - main [ref=e61]:
+      - generic [ref=e62]:
+        - generic [ref=e63]:
+          - heading "Partners" [level=2] [ref=e64]
+          - paragraph [ref=e65]: Manage bus operators and partner account status.
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - img
+            - textbox "Search by name, email, username, phone..." [ref=e68]
+          - combobox [ref=e69]:
+            - generic: All statuses
+            - img
+        - table [ref=e72]:
+          - rowgroup [ref=e73]:
+            - row "Operator Account Phone Status Bans Created At Actions" [ref=e74]:
+              - columnheader "Operator" [ref=e75]
+              - columnheader "Account" [ref=e76]
+              - columnheader "Phone" [ref=e77]
+              - columnheader "Status" [ref=e78]
+              - columnheader "Bans" [ref=e79]
+              - columnheader "Created At" [ref=e80]
+              - columnheader "Actions" [ref=e81]
+          - rowgroup [ref=e82]:
+            - row "Ngo Van Trinh ngovtrinh2707@gmail.com 0912345678 ACTIVE 2 15:54 15/06/2026 View Disable Delete" [ref=e83]:
+              - cell "Ngo Van Trinh" [ref=e84]
+              - cell "ngovtrinh2707@gmail.com" [ref=e85]:
+                - paragraph
+                - paragraph [ref=e86]: ngovtrinh2707@gmail.com
+              - cell "0912345678" [ref=e87]
+              - cell "ACTIVE" [ref=e88]:
+                - generic [ref=e89]: ACTIVE
+              - cell "2" [ref=e90]
+              - cell "15:54 15/06/2026" [ref=e91]
+              - cell "View Disable Delete" [ref=e92]:
+                - generic [ref=e93]:
+                  - button "View" [ref=e94]
+                  - button "Disable" [ref=e95]
+                  - button "Delete" [ref=e96]
+        - generic [ref=e97]:
+          - paragraph [ref=e98]: Page 1 of 1 · 1 total
+          - generic [ref=e99]:
+            - button "Previous" [disabled]
+            - button "Next" [disabled]

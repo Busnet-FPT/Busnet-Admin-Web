@@ -1,0 +1,29 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - img "BusNet" [ref=e8]
+    - generic [ref=e9]:
+      - heading "BusNet Admin Console" [level=1] [ref=e10]
+      - paragraph [ref=e11]: Manage users, partners, reports, and every operation of the BusNet bus ticketing platform.
+    - generic [ref=e12]:
+      - img [ref=e13]
+      - text: Restricted area for system administrators
+  - generic [ref=e17]:
+    - generic [ref=e18]:
+      - heading "Admin Login" [level=2] [ref=e19]
+      - paragraph [ref=e20]: Enter your administrator credentials to access the system.
+    - generic [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e23]: Email
+        - textbox "Email" [ref=e24]:
+          - /placeholder: admin@busnet.com
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: Password
+          - link "Forgot password?" [ref=e28] [cursor=pointer]:
+            - /url: /forgot-password
+        - generic [ref=e29]:
+          - textbox "Password" [ref=e30]:
+            - /placeholder: ••••••••
+          - button "Show password" [ref=e31]:
+            - img [ref=e32]
+      - button "Sign In" [ref=e35]

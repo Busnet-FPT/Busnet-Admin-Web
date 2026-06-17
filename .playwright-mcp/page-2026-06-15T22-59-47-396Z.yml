@@ -1,0 +1,101 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - text: BusNet Admin
+        - navigation:
+          - link:
+            - /url: /
+            - img
+            - text: Dashboard
+          - link:
+            - /url: /users
+            - img
+            - text: Users
+          - link:
+            - /url: /partners
+            - img
+            - text: Partners
+          - link:
+            - /url: /reports
+            - img
+            - text: Reports
+          - link:
+            - /url: /subscriptions
+            - img
+            - text: Subscriptions
+          - link:
+            - /url: /settings
+            - img
+            - text: Settings
+      - generic:
+        - banner:
+          - generic:
+            - heading [level=1]: Admin Panel
+            - paragraph: Manage BusNet system data
+          - button:
+            - img
+            - text: Logout
+        - main:
+          - generic:
+            - generic:
+              - heading [level=2]: Partners
+              - paragraph: Manage bus operators and partner account status.
+            - alert: Partner account enabled successfully
+            - generic:
+              - generic:
+                - img
+                - textbox:
+                  - /placeholder: Search by name, email, username, phone...
+              - combobox [expanded]:
+                - generic: All statuses
+                - img
+            - generic:
+              - generic:
+                - table:
+                  - rowgroup:
+                    - row:
+                      - columnheader: Operator
+                      - columnheader: Account
+                      - columnheader: Phone
+                      - columnheader: Status
+                      - columnheader: Bans
+                      - columnheader: Created At
+                      - columnheader: Actions
+                  - rowgroup:
+                    - row:
+                      - cell: Ngo Van Trinh
+                      - cell:
+                        - generic: ngovtrinh2707@gmail.com
+                      - cell: "0912345678"
+                      - cell:
+                        - generic: ACTIVE
+                      - cell: "1"
+                      - cell: 6/15/2026, 3:54:00 PM
+                      - cell:
+                        - generic:
+                          - button: View
+                          - button: Disable
+                          - button: Delete
+            - generic:
+              - paragraph: Page 1 of 1 (1 total)
+              - generic:
+                - button [disabled]: Previous
+                - button [disabled]: Next
+  - listbox [active] [ref=e144]:
+    - option "All statuses" [ref=e145]:
+      - generic:
+        - generic:
+          - img
+      - generic [ref=e146]: All statuses
+    - option "Active" [ref=e147]:
+      - generic [ref=e148]: Active
+    - option "Banned" [ref=e149]:
+      - generic [ref=e150]: Banned
+    - option "Unverified" [ref=e151]:
+      - generic [ref=e152]: Unverified
+    - option "Pending Approval" [ref=e153]:
+      - generic [ref=e154]: Pending Approval

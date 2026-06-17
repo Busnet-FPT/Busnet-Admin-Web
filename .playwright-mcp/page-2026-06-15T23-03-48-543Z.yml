@@ -1,0 +1,88 @@
+- generic:
+  - generic:
+    - generic:
+      - complementary:
+        - generic:
+          - link:
+            - /url: /
+            - text: BusNet Admin
+        - navigation:
+          - link:
+            - /url: /
+            - img
+            - text: Dashboard
+          - link:
+            - /url: /users
+            - img
+            - text: Users
+          - link:
+            - /url: /partners
+            - img
+            - text: Partners
+          - link:
+            - /url: /reports
+            - img
+            - text: Reports
+          - link:
+            - /url: /subscriptions
+            - img
+            - text: Subscriptions
+          - link:
+            - /url: /settings
+            - img
+            - text: Settings
+      - generic:
+        - banner:
+          - generic:
+            - heading [level=1]: Admin Panel
+            - paragraph: Manage BusNet system data
+          - button:
+            - img
+            - text: Logout
+        - main:
+          - generic:
+            - generic:
+              - heading [level=2]: Partners
+              - paragraph: Manage bus operators and partner account status.
+            - generic:
+              - generic:
+                - img
+                - textbox:
+                  - /placeholder: Search by name, email, username, phone...
+              - combobox [expanded]:
+                - generic: Banned
+                - img
+            - generic:
+              - generic:
+                - table:
+                  - rowgroup:
+                    - row:
+                      - columnheader: Operator
+                      - columnheader: Account
+                      - columnheader: Phone
+                      - columnheader: Status
+                      - columnheader: Bans
+                      - columnheader: Created At
+                      - columnheader: Actions
+                  - rowgroup:
+                    - row:
+                      - cell: No partners found.
+            - generic:
+              - paragraph: Page 1 of 1 (0 total)
+              - generic:
+                - button [disabled]: Previous
+                - button [disabled]: Next
+  - listbox [ref=e112]:
+    - option "All statuses" [ref=e113]:
+      - generic [ref=e114]: All statuses
+    - option "Active" [ref=e115]:
+      - generic [ref=e116]: Active
+    - option "Banned" [active] [selected] [ref=e117]:
+      - generic:
+        - generic:
+          - img
+      - generic [ref=e118]: Banned
+    - option "Unverified" [ref=e119]:
+      - generic [ref=e120]: Unverified
+    - option "Pending Approval" [ref=e121]:
+      - generic [ref=e122]: Pending Approval

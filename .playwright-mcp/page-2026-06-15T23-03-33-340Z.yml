@@ -1,0 +1,67 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - link "BusNet Admin" [ref=e6] [cursor=pointer]:
+      - /url: /
+    - navigation [ref=e7]:
+      - link "Dashboard" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - img [ref=e9]
+        - text: Dashboard
+      - link "Users" [ref=e14] [cursor=pointer]:
+        - /url: /users
+        - img [ref=e15]
+        - text: Users
+      - link "Partners" [ref=e20] [cursor=pointer]:
+        - /url: /partners
+        - img [ref=e21]
+        - text: Partners
+      - link "Reports" [ref=e25] [cursor=pointer]:
+        - /url: /reports
+        - img [ref=e26]
+        - text: Reports
+      - link "Subscriptions" [ref=e28] [cursor=pointer]:
+        - /url: /subscriptions
+        - img [ref=e29]
+        - text: Subscriptions
+      - link "Settings" [ref=e31] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e32]
+        - text: Settings
+  - generic [ref=e35]:
+    - banner [ref=e36]:
+      - generic [ref=e37]:
+        - heading "Admin Panel" [level=1] [ref=e38]
+        - paragraph [ref=e39]: Manage BusNet system data
+      - button "Logout" [ref=e40]:
+        - img [ref=e41]
+        - text: Logout
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Partners" [level=2] [ref=e47]
+          - paragraph [ref=e48]: Manage bus operators and partner account status.
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - img
+            - textbox "Search by name, email, username, phone..." [ref=e51]
+          - combobox [active] [ref=e52]:
+            - generic: Banned
+            - img
+        - table [ref=e55]:
+          - rowgroup [ref=e56]:
+            - row "Operator Account Phone Status Bans Created At Actions" [ref=e57]:
+              - columnheader "Operator" [ref=e58]
+              - columnheader "Account" [ref=e59]
+              - columnheader "Phone" [ref=e60]
+              - columnheader "Status" [ref=e61]
+              - columnheader "Bans" [ref=e62]
+              - columnheader "Created At" [ref=e63]
+              - columnheader "Actions" [ref=e64]
+          - rowgroup [ref=e65]:
+            - row "No partners found." [ref=e110]:
+              - cell "No partners found." [ref=e111]
+        - generic [ref=e80]:
+          - paragraph [ref=e81]: Page 1 of 1 (0 total)
+          - generic [ref=e82]:
+            - button "Previous" [disabled]
+            - button "Next" [disabled]
