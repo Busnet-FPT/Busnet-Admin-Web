@@ -9,11 +9,12 @@ import {
   DollarSign,
   Eye,
   Loader2,
-  MoreVertical,
   Pencil,
   Plus,
+  Power,
   Search,
   Star,
+  Trash2,
   Users,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -838,19 +839,24 @@ function SubscriptionsPage() {
                       >
                         <Pencil className="size-4" />
                       </button>
-                      <button
-                        onClick={() => {
-                          if (plan.status === 'DELETED') return
-                          openStatusToggle(plan)
-                        }}
-                        className={cn(
-                          'flex size-8 items-center justify-center rounded-lg transition-colors',
-                          plan.status === 'DELETED' ? 'cursor-not-allowed text-slate-200' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-600',
-                        )}
-                        title="More"
-                      >
-                        <MoreVertical className="size-4" />
-                      </button>
+                      {plan.status !== 'DELETED' && (
+                        <button
+                          onClick={() => openStatusToggle(plan)}
+                          className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-amber-600"
+                          title={plan.status === 'ACTIVE' ? 'Deactivate' : 'Activate'}
+                        >
+                          <Power className="size-4" />
+                        </button>
+                      )}
+                      {plan.status !== 'DELETED' && (
+                        <button
+                          onClick={() => openDeleteConfirm(plan)}
+                          className="flex size-8 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600"
+                          title="Delete"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
