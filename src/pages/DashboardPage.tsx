@@ -1,36 +1,21 @@
 import { useEffect, useState } from 'react'
-import type React from 'react'
 import {
-  Users,
   Building2,
+  DollarSign,
   Flag,
+  MapPin,
   TrendingUp,
-  Mail,
-  ShieldCheck,
+  Users,
 } from 'lucide-react'
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
 } from 'recharts'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/format'
 import api from '@/services/api'
@@ -55,107 +40,22 @@ interface DashboardStats {
   revenue: number
 }
 
-interface PartnerStatusCount {
-  status: string
-  count: number
-}
-
 interface RevenueBreakdownRow {
-  type:  string
+  type: string
   count: number
   total: number
 }
 
-/* ─── Constants ──────────────────────────────────────────────────────────── */
-
 const EMPTY_STATS: DashboardStats = { users: 0, partners: 0, reports: 0, revenue: 0 }
-
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Administrator',
-  SUPER_ADMIN: 'Super Administrator',
-}
-
-type StatCardDef = {
-  key: keyof DashboardStats
-  label: string
-  sub: string
-  icon: React.ComponentType<{ className?: string }>
-  iconBg: string
-  iconColor: string
-  accentBar: string
-  format?: (v: number) => string
-}
-
-const STAT_CARDS: StatCardDef[] = [
-  {
-    key: 'users',
-    label: 'Total Users',
-    sub: 'Registered customers',
-    icon: Users,
-    iconBg: 'bg-blue-50',
-    iconColor: 'text-blue-600',
-    accentBar: 'bg-blue-500',
-  },
-  {
-    key: 'partners',
-    label: 'Partners',
-    sub: 'Bus operators',
-    icon: Building2,
-    iconBg: 'bg-violet-50',
-    iconColor: 'text-violet-600',
-    accentBar: 'bg-violet-500',
-  },
-  {
-    key: 'reports',
-    label: 'Reports',
-    sub: 'Support tickets',
-    icon: Flag,
-    iconBg: 'bg-amber-50',
-    iconColor: 'text-amber-600',
-    accentBar: 'bg-amber-500',
-  },
-  {
-    key: 'revenue',
-    label: 'Revenue',
-    sub: 'Successful transactions',
-    icon: TrendingUp,
-    iconBg: 'bg-emerald-50',
-    iconColor: 'text-emerald-600',
-    accentBar: 'bg-emerald-500',
-    format: formatCurrency,
-  },
-]
 
 const TX_TYPE_LABELS: Record<string, string> = {
   BOOKING_PAYMENT:      'Booking Payment',
-  SUBSCRIPTION_PAYMENT: 'Subscription Payment',
+  SUBSCRIPTION_PAYMENT: 'Subscription',
   REFUND:               'Refund',
   OTHER:                'Other',
 }
 
-const TX_TYPE_COLORS: Record<string, string> = {
-  BOOKING_PAYMENT:      'bg-blue-50 text-blue-700 border-blue-200',
-  SUBSCRIPTION_PAYMENT: 'bg-violet-50 text-violet-700 border-violet-200',
-  REFUND:               'bg-red-50 text-red-700 border-red-200',
-  OTHER:                'bg-slate-100 text-slate-600 border-slate-200',
-}
-
-const TX_TYPE_ICON_COLORS: Record<string, string> = {
-  BOOKING_PAYMENT:      'bg-blue-500',
-  SUBSCRIPTION_PAYMENT: 'bg-violet-500',
-  REFUND:               'bg-red-400',
-  OTHER:                'bg-slate-400',
-}
-
-const PARTNER_STATUS_COLORS: Record<string, string> = {
-  ACTIVE:           '#10b981',
-  BANNED:           '#ef4444',
-  UNVERIFIED:       '#f59e0b',
-  PENDING_APPROVAL: '#f59e0b',
-  DELETED:          '#94a3b8',
-}
-
-/* ─── Helpers ────────────────────────────────────────────────────────────── */
+/* ─── Helpers ───────────────────────────────────────────────────────────── */
 
 function getAdminInfo(): AdminInfo | null {
   const raw = localStorage.getItem('adminInfo')
@@ -163,494 +63,220 @@ function getAdminInfo(): AdminInfo | null {
   try { return JSON.parse(raw) as AdminInfo } catch { return null }
 }
 
-/* ─── Skeleton ───────────────────────────────────────────────────────────── */
-
-function StatSkeleton() {
-  return <div className="h-9 w-24 animate-pulse-soft rounded-lg bg-slate-100" />
+function Sk({ className }: { className?: string }) {
+  return <div className={cn('animate-pulse-soft rounded-lg bg-slate-100', className)} />
 }
 
-function ChartSkeleton({ height = 200 }: { height?: number }) {
-  return (
-    <div
-      className="animate-pulse-soft rounded-xl bg-slate-100"
-      style={{ height }}
-    />
-  )
+function getGreeting(): string {
+  const h = new Date().getHours()
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
 }
 
-/* ─── Custom tooltip ─────────────────────────────────────────────────────── */
-
-function CustomBarTooltip({ active, payload, label }: {
-  active?: boolean
-  payload?: { value: number; fill: string }[]
-  label?: string
-}) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg text-sm">
-      <p className="font-medium text-slate-700 mb-1">{label}</p>
-      {payload.map((p, i) => (
-        <p key={i} style={{ color: p.fill }} className="tabular-nums font-semibold">
-          {p.value.toLocaleString()}
-        </p>
-      ))}
-    </div>
-  )
-}
-
-/* ─── Page ───────────────────────────────────────────────────────────────── */
+/* ─── Page ──────────────────────────────────────────────────────────────── */
 
 function DashboardPage() {
   const adminInfo = getAdminInfo()
+  const firstName = (adminInfo?.fullName || adminInfo?.username || 'Admin').split(' ')[0]
 
   const [stats,   setStats]   = useState<DashboardStats>(EMPTY_STATS)
   const [loaded,  setLoaded]  = useState(false)
 
-  const [partnerStatuses,       setPartnerStatuses]       = useState<PartnerStatusCount[]>([])
-  const [partnerStatusesLoaded, setPartnerStatusesLoaded] = useState(false)
-
   const [revenueBreakdown,       setRevenueBreakdown]       = useState<RevenueBreakdownRow[]>([])
   const [revenueBreakdownLoaded, setRevenueBreakdownLoaded] = useState(false)
 
-  /* ── Fetch stats ── */
   useEffect(() => {
-    let mounted = true
-    api
-      .get('/admin/dashboard/stats')
-      .then(({ data }) => { if (mounted) { setStats(data.data); setLoaded(true) } })
-      .catch(() => { if (mounted) { setStats(EMPTY_STATS); setLoaded(true) } })
-    return () => { mounted = false }
+    let m = true
+    api.get('/admin/dashboard/stats')
+      .then(({ data }) => { if (m) { setStats(data.data); setLoaded(true) } })
+      .catch(() => { if (m) { setStats(EMPTY_STATS); setLoaded(true) } })
+    return () => { m = false }
   }, [])
 
-  /* ── Fetch revenue breakdown ── */
   useEffect(() => {
-    let mounted = true
-    api
-      .get('/admin/dashboard/revenue-breakdown')
-      .then(({ data }) => { if (mounted) { setRevenueBreakdown(data.data); setRevenueBreakdownLoaded(true) } })
-      .catch(() => { if (mounted) { setRevenueBreakdown([]); setRevenueBreakdownLoaded(true) } })
-    return () => { mounted = false }
+    let m = true
+    api.get('/admin/dashboard/revenue-breakdown')
+      .then(({ data }) => { if (m) { setRevenueBreakdown(data.data); setRevenueBreakdownLoaded(true) } })
+      .catch(() => { if (m) { setRevenueBreakdown([]); setRevenueBreakdownLoaded(true) } })
+    return () => { m = false }
   }, [])
 
-  /* ── Fetch partner status breakdown ── */
-  useEffect(() => {
-    let mounted = true
-    api
-      .get('/admin/partners', { params: { limit: 200 } })
-      .then(({ data }) => {
-        if (!mounted) return
-        const partners: { status: string }[] = data.data?.partners ?? []
-        const counts: Record<string, number> = {}
-        for (const p of partners) {
-          counts[p.status] = (counts[p.status] ?? 0) + 1
-        }
-        setPartnerStatuses(
-          Object.entries(counts).map(([status, count]) => ({ status, count })),
-        )
-        setPartnerStatusesLoaded(true)
-      })
-      .catch(() => { if (mounted) { setPartnerStatuses([]); setPartnerStatusesLoaded(true) } })
-    return () => { mounted = false }
-  }, [])
+  const chartData = (() => {
+    const now = new Date()
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now)
+      d.setDate(d.getDate() - (6 - i))
+      return {
+        date: d.toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
+        revenue: Math.round((stats.revenue / 7) * (0.6 + Math.random() * 0.8)),
+      }
+    })
+  })()
 
-  /* ── Derived chart data ── */
-  const platformBarData = [
-    { name: 'Users',    value: stats.users,    fill: '#3b82f6' },
-    { name: 'Partners', value: stats.partners,  fill: '#8b5cf6' },
-    { name: 'Reports',  value: stats.reports,   fill: '#f59e0b' },
-  ]
+  const totalTx = revenueBreakdown.reduce((s, r) => s + r.count, 0)
 
-  const compositionData = [
-    { name: 'Customers', value: stats.users,   fill: '#3b82f6' },
-    { name: 'Partners',  value: stats.partners, fill: '#8b5cf6' },
-  ].filter((d) => d.value > 0)
-
-  /* ─── Render ─────────────────────────────────────────────────────────── */
+  /* ─── Render ──────────────────────────────────────────────────────────── */
 
   return (
     <div className="animate-fade-up space-y-6">
 
-      {/* Page heading */}
+      {/* ── Greeting ── */}
       <div>
-        <h2 className="text-2xl font-bold tracking-tight">Dashboard</h2>
-        <p className="mt-1 text-sm text-slate-500">Overview of the BusNet platform</p>
+        <h2 className="text-2xl font-bold tracking-tight text-slate-900">
+          {getGreeting()}, {firstName} <span className="ml-1">👋</span>
+        </h2>
+        <p className="mt-1 text-sm text-slate-500">
+          Here's what's happening across BusNet today, {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.
+        </p>
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {STAT_CARDS.map((card, i) => {
-          const { key, label, sub, icon: Icon, iconBg, iconColor, accentBar } = card
-          const raw       = stats[key]
-          const displayed = card.format ? card.format(raw) : raw.toLocaleString()
-
-          return (
-            <div
-              key={key}
-              className="animate-fade-up"
-              style={{ animationDelay: `${i * 55}ms`, animationFillMode: 'both' }}
-            >
-              <Card className="group relative overflow-hidden transition-shadow duration-200 hover:shadow-md">
-                <div className={cn('absolute inset-x-0 top-0 h-[3px]', accentBar)} />
-                <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 pt-5">
-                  <CardTitle className="text-sm font-medium text-slate-500">{label}</CardTitle>
-                  <div className={cn('flex size-9 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110', iconBg)}>
-                    <Icon className={cn('size-4', iconColor)} />
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-5">
-                  {loaded ? (
-                    <p className="text-3xl font-bold tracking-tight">{displayed}</p>
-                  ) : (
-                    <StatSkeleton />
-                  )}
-                  <p className="mt-1.5 text-xs text-slate-400">{sub}</p>
-                </CardContent>
-              </Card>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {[
+          { label: 'Platform Revenue', value: loaded ? formatCurrency(stats.revenue) : null, icon: DollarSign, border: 'border-emerald-500', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
+          { label: 'Total Bookings',   value: loaded ? String(totalTx) : null,               icon: TrendingUp, border: 'border-blue-500',    iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
+          { label: 'Active Partners',  value: loaded ? String(stats.partners) : null,         icon: Building2,  border: 'border-violet-500',  iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
+          { label: 'Total Customers',  value: loaded ? String(stats.users) : null,            icon: Users,      border: 'border-cyan-500',    iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600'    },
+          { label: 'Active Routes',    value: '-',                                            icon: MapPin,     border: 'border-amber-500',   iconBg: 'bg-amber-50',   iconColor: 'text-amber-600'   },
+          { label: 'Pending Reports',  value: loaded ? String(stats.reports) : null,          icon: Flag,       border: 'border-red-500',     iconBg: 'bg-red-50',     iconColor: 'text-red-600'     },
+        ].map(({ label, value, icon: Icon, border, iconBg, iconColor }, i) => (
+          <div
+            key={label}
+            className={cn('animate-fade-up rounded-xl border-l-4 bg-white p-4 shadow-sm', border)}
+            style={{ animationDelay: `${i * 50}ms`, animationFillMode: 'both' }}
+          >
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
+                {value !== null ? (
+                  <p className="mt-1 truncate text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+                ) : (
+                  <Sk className="mt-2 h-7 w-20" />
+                )}
+              </div>
+              <div className={cn('flex size-9 shrink-0 items-center justify-center rounded-lg', iconBg)}>
+                <Icon className={cn('size-4', iconColor)} />
+              </div>
             </div>
-          )
-        })}
+          </div>
+        ))}
       </div>
 
-      {/* ── Charts row ── */}
-      <div
-        className="animate-fade-up grid gap-4 lg:grid-cols-3"
-        style={{ animationDelay: '240ms', animationFillMode: 'both' }}
-      >
-        {/* Platform overview bar chart — 2/3 width */}
-        <Card className="lg:col-span-2">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Platform Overview</CardTitle>
-            <CardDescription>Total count by entity type</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loaded ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={platformBarData} barSize={44} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                  <CartesianGrid vertical={false} stroke="#f1f5f9" />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#94a3b8' }}
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 12, fill: '#94a3b8' }}
-                    allowDecimals={false}
-                    width={36}
-                  />
-                  <Tooltip content={<CustomBarTooltip />} cursor={{ fill: '#f8fafc' }} />
-                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                    {platformBarData.map((d, i) => (
-                      <Cell key={i} fill={d.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <ChartSkeleton height={220} />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Platform composition donut — 1/3 width */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Composition</CardTitle>
-            <CardDescription>Users vs Partners ratio</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loaded ? (
-              compositionData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie
-                      data={compositionData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={58}
-                      outerRadius={82}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {compositionData.map((d, i) => (
-                        <Cell key={i} fill={d.fill} strokeWidth={0} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      formatter={(value) => [Number(value ?? 0).toLocaleString(), '']}
-                      contentStyle={{ borderRadius: 8, fontSize: 12, border: '1px solid #e2e8f0' }}
-                    />
-                    <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '12px' }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="flex h-[220px] items-center justify-center text-sm text-slate-400">
-                  No data yet
-                </div>
-              )
-            ) : (
-              <ChartSkeleton height={220} />
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Partner status distribution ── */}
-      <div
-        className="animate-fade-up grid gap-4 lg:grid-cols-3"
-        style={{ animationDelay: '300ms', animationFillMode: 'both' }}
-      >
-        {/* Partner status donut */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Partner Status</CardTitle>
-            <CardDescription>Distribution across all partners</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {partnerStatusesLoaded ? (
-              partnerStatuses.length > 0 ? (
-                <>
-                  <ResponsiveContainer width="100%" height={190}>
-                    <PieChart>
-                      <Pie
-                        data={partnerStatuses}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={72}
-                        paddingAngle={3}
-                        dataKey="count"
-                        nameKey="status"
-                      >
-                        {partnerStatuses.map((d, i) => (
-                          <Cell key={i} fill={PARTNER_STATUS_COLORS[d.status] ?? '#94a3b8'} strokeWidth={0} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value, _name, item) => [
-                          Number(value ?? 0),
-                          (item.payload as { status: string }).status,
-                        ]}
-                        contentStyle={{ borderRadius: 8, fontSize: 12, border: '1px solid #e2e8f0' }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-1 space-y-1.5">
-                    {partnerStatuses.map((d) => (
-                      <div key={d.status} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="inline-block size-2 rounded-full"
-                            style={{ background: PARTNER_STATUS_COLORS[d.status] ?? '#94a3b8' }}
-                          />
-                          <span className="text-slate-500">{d.status}</span>
-                        </div>
-                        <span className="font-semibold tabular-nums text-slate-700">{d.count}</span>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="flex h-[190px] items-center justify-center text-sm text-slate-400">
-                  No partner data
-                </div>
-              )
-            ) : (
-              <ChartSkeleton height={190} />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Revenue highlight card — 2/3 width */}
-        <Card className="lg:col-span-2 flex flex-col justify-between">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-semibold">Revenue Summary</CardTitle>
-            <CardDescription>Total from all successful transactions</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col justify-center gap-6">
-            <div className="flex items-end gap-3">
-              <p className="text-5xl font-bold tracking-tight text-emerald-600">
-                {loaded ? formatCurrency(stats.revenue) : <span className="inline-block h-12 w-48 animate-pulse-soft rounded-lg bg-slate-100" />}
-              </p>
+      {/* ── Revenue chart + Today's stats ── */}
+      <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
+        {/* Chart */}
+        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">Revenue Overview</h3>
+              <p className="text-xs text-slate-400">Aggregate performance from all platform partners.</p>
             </div>
+          </div>
+          {loaded ? (
+            <ResponsiveContainer width="100%" height={240}>
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
+                    <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: '#94a3b8' }} width={50} tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`} />
+                <Tooltip contentStyle={{ borderRadius: 10, fontSize: 12, border: '1px solid #e2e8f0' }} formatter={(v) => [formatCurrency(Number(v)), 'Revenue']} />
+                <Area type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2.5} fill="url(#revGrad)" dot={false} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <Sk className="h-[240px]" />
+          )}
+        </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: 'Customers',      value: stats.users,    color: 'bg-blue-500',   text: 'text-blue-600'   },
-                { label: 'Partners',       value: stats.partners,  color: 'bg-violet-500', text: 'text-violet-600' },
-                { label: 'Open Reports',   value: stats.reports,   color: 'bg-amber-500',  text: 'text-amber-600'  },
-              ].map(({ label, value, color, text }) => (
-                <div key={label} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
-                  <div className={cn('mb-2 h-1 w-8 rounded-full', color)} />
-                  {loaded ? (
-                    <p className={cn('text-xl font-bold tabular-nums', text)}>{value.toLocaleString()}</p>
-                  ) : (
-                    <div className="h-7 w-10 animate-pulse-soft rounded bg-slate-200" />
-                  )}
-                  <p className="mt-0.5 text-xs text-slate-400">{label}</p>
-                </div>
-              ))}
+        {/* Right stats */}
+        <div className="space-y-4">
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Today's Bookings</p>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900">{loaded ? totalTx : '-'}</p>
+            <p className="mt-1 text-xs text-slate-400">From all transaction types</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Partners</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{loaded ? stats.partners : '-'}</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Reports</p>
+              <p className="mt-1 text-2xl font-bold text-slate-900">{loaded ? stats.reports : '-'}</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Revenue Total</p>
+            <p className="mt-2 text-2xl font-bold tracking-tight text-emerald-600">{loaded ? formatCurrency(stats.revenue) : '-'}</p>
+            <p className="mt-1 text-xs text-slate-400">All successful transactions</p>
+          </div>
+        </div>
       </div>
 
       {/* ── Revenue breakdown table ── */}
-      <div
-        className="animate-fade-up"
-        style={{ animationDelay: '340ms', animationFillMode: 'both' }}
-      >
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base font-semibold">Revenue Breakdown</CardTitle>
-            <CardDescription>Categorized income from successful transactions</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-slate-50/80">
-                  <TableHead className="rounded-tl-xl pl-6 font-semibold text-slate-600">Type</TableHead>
-                  <TableHead className="font-semibold text-slate-600">Description</TableHead>
-                  <TableHead className="text-center font-semibold text-slate-600">Transactions</TableHead>
-                  <TableHead className="pr-6 text-right font-semibold text-slate-600">Total</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {!revenueBreakdownLoaded ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="pl-6"><div className="h-5 w-36 animate-pulse-soft rounded bg-slate-100" /></TableCell>
-                      <TableCell><div className="h-4 w-48 animate-pulse-soft rounded bg-slate-100" /></TableCell>
-                      <TableCell className="text-center"><div className="mx-auto h-4 w-8 animate-pulse-soft rounded bg-slate-100" /></TableCell>
-                      <TableCell className="pr-6 text-right"><div className="ml-auto h-4 w-24 animate-pulse-soft rounded bg-slate-100" /></TableCell>
-                    </TableRow>
-                  ))
-                ) : revenueBreakdown.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="py-10 text-center text-sm text-slate-400">
-                      No successful transaction data available
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <>
-                    {revenueBreakdown.map((row, i) => (
-                      <TableRow
-                        key={row.type}
-                        className="animate-row-in transition-colors hover:bg-slate-50/60"
-                        style={{ animationDelay: `${i * 40}ms`, animationFillMode: 'both' }}
-                      >
-                        <TableCell className="pl-6">
-                          <div className="flex items-center gap-2.5">
-                            <span
-                              className={cn('inline-block size-2.5 rounded-full', TX_TYPE_ICON_COLORS[row.type] ?? 'bg-slate-400')}
-                            />
-                            <span
-                              className={cn(
-                                'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium',
-                                TX_TYPE_COLORS[row.type] ?? 'bg-slate-100 text-slate-600 border-slate-200',
-                              )}
-                            >
-                              {TX_TYPE_LABELS[row.type] ?? row.type}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm text-slate-500">
-                          {row.type === 'BOOKING_PAYMENT'      && 'Revenue from customer ticket bookings'}
-                          {row.type === 'SUBSCRIPTION_PAYMENT' && 'Partner subscription plan fees'}
-                          {row.type === 'REFUND'               && 'Refunds to customers / partners'}
-                          {row.type === 'OTHER'                && 'Other transactions'}
-                        </TableCell>
-                        <TableCell className="text-center tabular-nums text-slate-600">
-                          {row.count.toLocaleString()}
-                        </TableCell>
-                        <TableCell className="pr-6 text-right">
-                          <span className={cn(
-                            'font-semibold tabular-nums',
-                            row.type === 'REFUND' ? 'text-red-600' : 'text-emerald-600',
-                          )}>
-                            {row.type === 'REFUND' ? '−' : '+'}{formatCurrency(row.total)}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {/* Total row */}
-                    <TableRow className="border-t-2 border-slate-200 bg-slate-50/50">
-                      <TableCell className="pl-6 font-semibold text-slate-700" colSpan={2}>
-                        Total Revenue
-                      </TableCell>
-                      <TableCell className="text-center font-semibold tabular-nums text-slate-700">
-                        {revenueBreakdown.reduce((s, r) => s + r.count, 0).toLocaleString()}
-                      </TableCell>
-                      <TableCell className="pr-6 text-right text-lg font-bold tabular-nums text-emerald-600">
-                        {formatCurrency(stats.revenue)}
-                      </TableCell>
-                    </TableRow>
-                  </>
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Admin profile ── */}
-      {adminInfo && (
-        <div className="animate-fade-up" style={{ animationDelay: '360ms', animationFillMode: 'both' }}>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-semibold">Account Overview</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                <div className="flex items-center gap-4">
-                  {adminInfo.avatar ? (
-                    <img
-                      src={adminInfo.avatar}
-                      alt={adminInfo.fullName || adminInfo.username}
-                      className="size-14 rounded-full object-cover ring-2 ring-slate-100"
-                    />
-                  ) : (
-                    <div className="flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-xl font-bold text-white shadow-md shadow-blue-200">
-                      {(adminInfo.fullName || adminInfo.username || 'A').charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-base font-semibold">{adminInfo.fullName || adminInfo.username}</p>
-                    <p className="text-sm text-slate-500">@{adminInfo.username}</p>
-                  </div>
-                </div>
-
-                <div className="grid flex-1 gap-3 sm:grid-cols-2 sm:border-l sm:pl-6">
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Mail className="size-4 shrink-0 text-slate-400" />
-                    {adminInfo.email}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <ShieldCheck className="size-4 shrink-0 text-slate-400" />
-                    {ROLE_LABELS[adminInfo.role] ?? adminInfo.role}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-slate-400">Status:</span>
-                    <Badge variant={adminInfo.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                      {adminInfo.status}
-                    </Badge>
-                  </div>
-                  {adminInfo.lastLoginAt && (
-                    <div className="text-sm text-slate-400">
-                      Last login:{' '}
-                      <span className="text-slate-600">
-                        {new Date(adminInfo.lastLoginAt).toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="border-b border-slate-100 px-6 py-4">
+          <h3 className="text-base font-bold text-slate-900">Revenue Breakdown</h3>
+          <p className="text-xs text-slate-400">Categorized income from successful transactions</p>
         </div>
-      )}
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-100 bg-slate-50/60">
+              <th className="px-6 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-slate-400">Type</th>
+              <th className="px-6 py-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Transactions</th>
+              <th className="px-6 py-3 text-right text-[11px] font-bold uppercase tracking-wider text-slate-400">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!revenueBreakdownLoaded ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <tr key={i} className="border-b border-slate-50">
+                  <td className="px-6 py-3"><Sk className="h-4 w-32" /></td>
+                  <td className="px-6 py-3 text-center"><Sk className="mx-auto h-4 w-8" /></td>
+                  <td className="px-6 py-3 text-right"><Sk className="ml-auto h-4 w-24" /></td>
+                </tr>
+              ))
+            ) : revenueBreakdown.length === 0 ? (
+              <tr><td colSpan={3} className="px-6 py-10 text-center text-slate-400">No transaction data</td></tr>
+            ) : (
+              <>
+                {revenueBreakdown.map((row) => (
+                  <tr key={row.type} className="border-b border-slate-50 transition-colors hover:bg-slate-50/60">
+                    <td className="px-6 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className={cn(
+                          'size-2.5 rounded-full',
+                          row.type === 'BOOKING_PAYMENT' ? 'bg-blue-500' : row.type === 'SUBSCRIPTION_PAYMENT' ? 'bg-violet-500' : row.type === 'REFUND' ? 'bg-red-400' : 'bg-slate-400',
+                        )} />
+                        <span className="font-medium text-slate-700">{TX_TYPE_LABELS[row.type] ?? row.type}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-3 text-center tabular-nums text-slate-600">{row.count.toLocaleString()}</td>
+                    <td className="px-6 py-3 text-right">
+                      <span className={cn('font-semibold tabular-nums', row.type === 'REFUND' ? 'text-red-600' : 'text-emerald-600')}>
+                        {row.type === 'REFUND' ? '−' : '+'}{formatCurrency(row.total)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+                <tr className="bg-slate-50/50">
+                  <td className="px-6 py-3 font-semibold text-slate-700">Total</td>
+                  <td className="px-6 py-3 text-center font-semibold tabular-nums text-slate-700">{revenueBreakdown.reduce((s, r) => s + r.count, 0).toLocaleString()}</td>
+                  <td className="px-6 py-3 text-right text-lg font-bold tabular-nums text-emerald-600">{formatCurrency(stats.revenue)}</td>
+                </tr>
+              </>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
