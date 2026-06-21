@@ -1,0 +1,64 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - generic [ref=e8]:
+      - img "BusNet" [ref=e10]
+      - heading "BusNet" [level=1] [ref=e11]
+      - paragraph [ref=e12]: Admin Terminal
+      - generic [ref=e13]:
+        - heading "Manage Your Network with Confidence" [level=2] [ref=e14]
+        - paragraph [ref=e15]: Monitor operations, oversee partners, and ensure a seamless experience for every passenger across our global logistics ecosystem.
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - img [ref=e18]
+          - text: 500+ Operators
+        - generic [ref=e23]:
+          - img [ref=e24]
+          - text: 2M+ Bookings
+        - generic [ref=e27]:
+          - img [ref=e28]
+          - text: 120+ Routes
+    - paragraph [ref=e31]: Protected Infrastructure V2.4.1
+  - generic [ref=e32]:
+    - generic [ref=e33]:
+      - generic [ref=e34]:
+        - img [ref=e35]
+        - text: EN
+      - generic [ref=e39]: v2.4.1
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - img [ref=e44]
+        - heading "Admin Sign In" [level=2] [ref=e46]
+        - paragraph [ref=e47]: Enter your credentials to access the administration panel.
+      - generic [ref=e48]:
+        - generic [ref=e49]:
+          - generic [ref=e50]:
+            - img [ref=e51]
+            - text: Email Address
+          - textbox "Email Address" [ref=e54]:
+            - /placeholder: admin@busnet.com
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - img [ref=e57]
+            - text: Password
+          - generic [ref=e60]:
+            - textbox "Password" [ref=e61]:
+              - /placeholder: ••••••••••
+            - button "Show password" [ref=e62]:
+              - img [ref=e63]
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - checkbox "Remember this device" [ref=e68]
+            - text: Remember this device
+          - link "Forgot password?" [ref=e69] [cursor=pointer]:
+            - /url: /forgot-password
+        - button "Sign In" [ref=e70]:
+          - img
+          - text: Sign In
+      - generic [ref=e71]:
+        - img [ref=e72]
+        - paragraph [ref=e75]: This is a restricted area. All access attempts are logged and monitored.
+      - generic [ref=e78]: OR
+      - button "Sign in with Security Key" [ref=e80]:
+        - img
+        - text: Sign in with Security Key
+      - paragraph [ref=e81]: Not an admin? Go to Partner Portal · Customer Site

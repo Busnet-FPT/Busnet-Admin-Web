@@ -1,3 +1,4 @@
+import { useCallback, useSyncExternalStore } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -21,9 +22,37 @@ const NAV_ITEMS = [
   { label: 'Settings', path: '/settings', icon: Settings },
 ]
 
-function getAdminInfo(): Record<string, string> {
+function resolveAvatar(url: string | null | undefined) {
+  if (!url) return null
+  if (url.startsWith('http')) return url
+  const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+  return base.replace(/\/api\/?$/, '') + url
+}
+
+const originalSetItem = localStorage.setItem.bind(localStorage)
+const listeners = new Set<() => void>()
+
+localStorage.setItem = (key: string, value: string) => {
+  originalSetItem(key, value)
+  if (key === 'adminInfo') {
+    listeners.forEach((fn) => fn())
+  }
+}
+
+function useAdminInfo(): Record<string, string> {
+  const subscribe = useCallback((cb: () => void) => {
+    listeners.add(cb)
+    return () => { listeners.delete(cb) }
+  }, [])
+
+  const getSnapshot = useCallback(() => {
+    return localStorage.getItem('adminInfo') || '{}'
+  }, [])
+
+  const raw = useSyncExternalStore(subscribe, getSnapshot)
+
   try {
-    return JSON.parse(localStorage.getItem('adminInfo') || '{}') as Record<string, string>
+    return JSON.parse(raw) as Record<string, string>
   } catch {
     return {}
   }
@@ -31,9 +60,10 @@ function getAdminInfo(): Record<string, string> {
 
 function AdminLayout() {
   const navigate = useNavigate()
-  const admin = getAdminInfo()
+  const admin = useAdminInfo()
   const initial = (admin.fullName || admin.username || 'A').charAt(0).toUpperCase()
   const roleLabel = admin.role === 'SUPER_ADMIN' ? 'Super Administrator' : 'Administrator'
+  const avatarUrl = resolveAvatar(admin.avatar)
 
   const handleLogout = async () => {
     try {
@@ -95,9 +125,13 @@ function AdminLayout() {
         <div className="shrink-0 border-t border-white/5 p-3">
           <div className="flex items-center gap-3 rounded-lg px-3 py-2.5">
             {/* Avatar */}
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-xs font-bold text-white shadow">
-              {initial}
-            </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="size-8 shrink-0 rounded-full object-cover shadow" />
+            ) : (
+              <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-blue-700 text-xs font-bold text-white shadow">
+                {initial}
+              </div>
+            )}
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-medium text-slate-200">

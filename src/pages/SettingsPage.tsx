@@ -2,14 +2,28 @@ import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Loader2, Mail, ShieldCheck, UserCircle } from 'lucide-react'
+import {
+  Bell,
+  CalendarDays,
+  ChevronRight,
+  Clock,
+  Eye,
+  EyeOff,
+  FileText,
+  ImageIcon,
+  Loader2,
+  Lock,
+  Trash2,
+  Upload,
+  User,
+  UserCircle,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Alert } from '@/components/ui/alert'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -21,6 +35,8 @@ import {
 import api from '@/services/api'
 import { getErrorMessage } from '@/lib/errors'
 import type { AdminProfile } from '@/types/admin'
+
+/* ─── Schemas ───────────────────────────────────────────────────────────── */
 
 const profileSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name cannot be empty'),
@@ -51,7 +67,24 @@ const ROLE_LABELS: Record<AdminProfile['role'], string> = {
   SUPER_ADMIN: 'Super Administrator',
 }
 
+const ABOUT_MAX = 250
+
+/* ─── Tab definitions ───────────────────────────────────────────────────── */
+
+type TabKey = 'personal' | 'security' | 'notifications' | 'activity'
+
+const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { key: 'personal', label: 'Personal Info', icon: User },
+  { key: 'security', label: 'Security', icon: Lock },
+  { key: 'notifications', label: 'Notifications', icon: Bell },
+  { key: 'activity', label: 'Activity Log', icon: FileText },
+]
+
+/* ─── Page ──────────────────────────────────────────────────────────────── */
+
 function SettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabKey>('personal')
+
   const [profile, setProfile] = useState<AdminProfile | null>(null)
   const [profileLoading, setProfileLoading] = useState(true)
   const [profileError, setProfileError] = useState<string | null>(null)
@@ -61,8 +94,13 @@ function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [aboutMe, setAboutMe] = useState('')
+
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [passwordSuccess, setPasswordSuccess] = useState<string | null>(null)
+  const [showCurrentPw, setShowCurrentPw] = useState(false)
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
 
   const [verifyOpen, setVerifyOpen] = useState(false)
   const [verifyStep, setVerifyStep] = useState<'send' | 'code'>('send')
@@ -70,18 +108,11 @@ function SettingsPage() {
   const [verifySuccess, setVerifySuccess] = useState<string | null>(null)
   const [sendingCode, setSendingCode] = useState(false)
 
-  const profileForm = useForm<ProfileFormValues>({
-    resolver: zodResolver(profileSchema),
-  })
+  const profileForm = useForm<ProfileFormValues>({ resolver: zodResolver(profileSchema) })
+  const passwordForm = useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) })
+  const verifyForm = useForm<VerifyCodeFormValues>({ resolver: zodResolver(verifyCodeSchema) })
 
-  const passwordForm = useForm<PasswordFormValues>({
-    resolver: zodResolver(passwordSchema),
-  })
-
-  const verifyForm = useForm<VerifyCodeFormValues>({
-    resolver: zodResolver(verifyCodeSchema),
-  })
-
+  /* ── Fetch profile ── */
   const fetchProfile = () => {
     setProfileLoading(true)
     setProfileError(null)
@@ -120,38 +151,37 @@ function SettingsPage() {
 
   useEffect(() => {
     if (!avatarPreview) return
-    return () => {
-      URL.revokeObjectURL(avatarPreview)
-    }
+    return () => { URL.revokeObjectURL(avatarPreview) }
   }, [avatarPreview])
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-
-    if (!file) {
-      return
-    }
-
+    if (!file) return
     setAvatarFile(file)
     setAvatarPreview(URL.createObjectURL(file))
   }
 
+  const handleRemoveAvatar = () => {
+    setAvatarFile(null)
+    setAvatarPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  /* ── Submit profile ── */
   const onSubmitProfile = async (values: ProfileFormValues) => {
     setProfileError(null)
     setProfileSuccess(null)
 
     try {
-      let payload: FormData | ProfileFormValues = values
+      const formData = new FormData()
+      formData.append('fullName', values.fullName)
+      formData.append('username', values.username)
 
       if (avatarFile) {
-        const formData = new FormData()
-        formData.append('fullName', values.fullName)
-        formData.append('username', values.username)
         formData.append('avatar', avatarFile)
-        payload = formData
       }
 
-      const { data } = await api.patch('/admin/profile', payload)
+      const { data } = await api.patch('/admin/profile', formData)
       persistAdminInfo(data.data)
       profileForm.reset({
         fullName: data.data.fullName || '',
@@ -159,15 +189,18 @@ function SettingsPage() {
       })
       setAvatarFile(null)
       setAvatarPreview(null)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
+      if (fileInputRef.current) fileInputRef.current.value = ''
       setProfileSuccess(data.message || 'Profile updated successfully.')
+      setTimeout(() => {
+        setProfileSuccess(null)
+        fetchProfile()
+      }, 1500)
     } catch (error) {
       setProfileError(getErrorMessage(error, 'Failed to update profile.'))
     }
   }
 
+  /* ── Submit password ── */
   const onSubmitPassword = async (values: PasswordFormValues) => {
     setPasswordError(null)
     setPasswordSuccess(null)
@@ -184,6 +217,7 @@ function SettingsPage() {
     }
   }
 
+  /* ── Email verify ── */
   const openVerifyDialog = () => {
     setVerifyOpen(true)
     setVerifyStep('send')
@@ -220,65 +254,153 @@ function SettingsPage() {
       }
 
       setVerifySuccess(data.message || 'Email verified successfully.')
-      setTimeout(() => {
-        setVerifyOpen(false)
-      }, 1000)
+      setTimeout(() => { setVerifyOpen(false) }, 1000)
     } catch (error) {
       setVerifyError(getErrorMessage(error, 'Failed to verify email.'))
     }
   }
 
-  const avatarSrc = avatarPreview || profile?.avatar || null
+  const handleDiscard = () => {
+    if (profile) {
+      profileForm.reset({
+        fullName: profile.fullName || '',
+        username: profile.username,
+      })
+    }
+    setAvatarFile(null)
+    setAvatarPreview(null)
+    setAboutMe('')
+    setProfileError(null)
+    setProfileSuccess(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const resolveAvatar = (url: string | null | undefined) => {
+    if (!url) return null
+    if (url.startsWith('http')) return url
+    const base = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
+    return base.replace(/\/api\/?$/, '') + url
+  }
+
+  const avatarSrc = avatarPreview || resolveAvatar(profile?.avatar) || null
+
+  /* ─── Render ──────────────────────────────────────────────────────────── */
 
   return (
-    <div className="animate-fade-up space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Account Settings</h2>
-        <p className="text-slate-500">Manage your admin account information and security.</p>
+    <div className="animate-fade-up flex flex-col">
+
+      {/* ── Page header ── */}
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="mb-1 flex items-center gap-1.5 text-sm text-slate-400">
+            <span>Settings</span>
+            <ChevronRight className="size-3.5" />
+            <span className="font-medium text-slate-600">Update Profile</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-blue-600 text-white">
+              <User className="size-4" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold tracking-tight text-slate-900">Update Profile</h2>
+              <p className="text-sm text-slate-500">Manage your personal identity and account security</p>
+            </div>
+          </div>
+        </div>
+
+        {activeTab === 'personal' && (
+          <div className="flex items-center gap-3">
+            <Button variant="outline" onClick={handleDiscard}>
+              Discard Changes
+            </Button>
+            <Button
+              type="button"
+              onClick={profileForm.handleSubmit(onSubmitProfile)}
+              disabled={profileForm.formState.isSubmitting}
+              className="gap-2 bg-orange-500 text-white hover:bg-orange-600"
+            >
+              {profileForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </div>
+        )}
       </div>
 
+      {/* Toast notifications */}
+      {(profileSuccess || profileError) && (
+        <div className="fixed right-6 top-20 z-50 animate-fade-up">
+          {profileError && (
+            <Alert variant="destructive" onDismiss={() => setProfileError(null)} className="min-w-[320px] shadow-lg">
+              {profileError}
+            </Alert>
+          )}
+          {profileSuccess && (
+            <Alert variant="success" onDismiss={() => setProfileSuccess(null)} className="min-w-[320px] shadow-lg">
+              {profileSuccess}
+            </Alert>
+          )}
+        </div>
+      )}
+
+      {/* ── Loading ── */}
       {profileLoading ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
+        <div className="flex items-center gap-2 py-16 text-sm text-muted-foreground justify-center">
+          <Loader2 className="size-5 animate-spin" />
           Loading account information...
         </div>
       ) : (
-        <Tabs defaultValue="profile">
-          <TabsList>
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="security">Security</TabsTrigger>
-          </TabsList>
+        <>
+          {/* ── Tabs ── */}
+          <div className="mb-6 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+            {TABS.map(({ key, label, icon: Icon }) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setActiveTab(key)}
+                className={`flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition-all ${
+                  activeTab === key
+                    ? 'bg-blue-50 text-blue-700 shadow-sm'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                }`}
+              >
+                <Icon className="size-4" />
+                {label}
+              </button>
+            ))}
+          </div>
 
-          <TabsContent value="profile" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Information</CardTitle>
-                <CardDescription>
-                  Update your display name, username, and avatar.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {profileError && <Alert variant="destructive">{profileError}</Alert>}
-                {profileSuccess && <Alert variant="success">{profileSuccess}</Alert>}
+          {/* ── Personal Info tab ── */}
+          {activeTab === 'personal' && (
+            <form onSubmit={profileForm.handleSubmit(onSubmitProfile)} noValidate>
+              <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
 
-                <div className="flex items-center gap-4">
-                  {avatarSrc ? (
-                    <img
-                      src={avatarSrc}
-                      alt={profile?.fullName || profile?.username}
-                      className="size-16 rounded-full object-cover"
-                    />
-                  ) : (
-                    <UserCircle className="size-16 text-slate-300" />
-                  )}
-                  <div className="space-y-1">
+                {/* Left — Profile image */}
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    Profile Image
+                  </h3>
+                  <div className="flex flex-col items-center">
+                    <div className="relative mb-5">
+                      {avatarSrc ? (
+                        <img
+                          src={avatarSrc}
+                          alt={profile?.fullName || profile?.username}
+                          className="size-28 rounded-full border-4 border-white object-cover shadow-lg"
+                        />
+                      ) : (
+                        <div className="flex size-28 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-slate-200 to-slate-300 shadow-lg">
+                          <UserCircle className="size-16 text-slate-400" />
+                        </div>
+                      )}
+                    </div>
+
                     <Button
                       type="button"
-                      variant="outline"
-                      size="sm"
                       onClick={() => fileInputRef.current?.click()}
+                      className="mb-3 w-full gap-2 bg-blue-600 text-white hover:bg-blue-700"
                     >
-                      Change Avatar
+                      <Upload className="size-4" />
+                      Change Photo
                     </Button>
                     <input
                       ref={fileInputRef}
@@ -287,168 +409,368 @@ function SettingsPage() {
                       className="hidden"
                       onChange={handleAvatarChange}
                     />
-                    {avatarFile && (
-                      <p className="text-xs text-muted-foreground">{avatarFile.name}</p>
+
+                    {(avatarSrc || avatarFile) && (
+                      <button
+                        type="button"
+                        onClick={handleRemoveAvatar}
+                        className="flex items-center gap-1.5 text-sm font-medium text-red-500 transition-colors hover:text-red-600"
+                      >
+                        <Trash2 className="size-3.5" />
+                        Remove Photo
+                      </button>
                     )}
+
+                    <p className="mt-4 text-center text-[11px] text-slate-400">
+                      <ImageIcon className="mb-0.5 inline size-3" /> JPG, GIF or PNG.
+                      <br />
+                      Max size 2MB.
+                    </p>
                   </div>
                 </div>
 
-                <form
-                  className="space-y-4"
-                  onSubmit={profileForm.handleSubmit(onSubmitProfile)}
-                  noValidate
-                >
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
+                {/* Right — Account details */}
+                <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="mb-5 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                    Account Details
+                  </h3>
+
+                  <div className="grid gap-x-6 gap-y-5 sm:grid-cols-2">
+                    {/* Full Name */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="fullName" className="text-xs font-semibold text-slate-600">
+                        Full Name
+                      </Label>
                       <Input
                         id="fullName"
+                        placeholder="Enter your full name"
                         aria-invalid={!!profileForm.formState.errors.fullName}
+                        className="h-11 rounded-lg border-slate-200 bg-white shadow-sm"
                         {...profileForm.register('fullName')}
                       />
                       {profileForm.formState.errors.fullName && (
-                        <p className="text-sm text-destructive">
-                          {profileForm.formState.errors.fullName.message}
-                        </p>
+                        <p className="text-xs text-red-500">{profileForm.formState.errors.fullName.message}</p>
                       )}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="username">Username</Label>
+                    {/* Role (read-only, mapped to "Job Title") */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-slate-600">Job Title</Label>
+                      <Input
+                        readOnly
+                        value={profile ? ROLE_LABELS[profile.role] : ''}
+                        className="h-11 rounded-lg border-slate-200 bg-slate-50 text-slate-500 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Email */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-slate-600">Email Address</Label>
+                      <div className="relative">
+                        <Input
+                          readOnly
+                          value={profile?.email || ''}
+                          className="h-11 rounded-lg border-slate-200 bg-slate-50 pr-24 text-slate-500 shadow-sm"
+                        />
+                        <div className="absolute inset-y-0 right-3 flex items-center">
+                          {profile?.isEmailVerified ? (
+                            <Badge className="gap-1 border-emerald-200 bg-emerald-50 text-[10px] text-emerald-700">
+                              <span className="size-1.5 rounded-full bg-emerald-500" />
+                              Verified
+                            </Badge>
+                          ) : (
+                            <button type="button" onClick={openVerifyDialog}>
+                              <Badge variant="destructive" className="cursor-pointer text-[10px]">
+                                Not verified
+                              </Badge>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status (mapped to "Department") */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-slate-600">Department</Label>
+                      <Input
+                        readOnly
+                        value={profile?.status || ''}
+                        className="h-11 rounded-lg border-slate-200 bg-slate-50 text-slate-500 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Username */}
+                    <div className="space-y-1.5">
+                      <Label htmlFor="username" className="text-xs font-semibold text-slate-600">
+                        Username
+                      </Label>
                       <Input
                         id="username"
+                        placeholder="Enter username"
                         aria-invalid={!!profileForm.formState.errors.username}
+                        className="h-11 rounded-lg border-slate-200 bg-white shadow-sm"
                         {...profileForm.register('username')}
                       />
                       {profileForm.formState.errors.username && (
-                        <p className="text-sm text-destructive">
-                          {profileForm.formState.errors.username.message}
-                        </p>
+                        <p className="text-xs text-red-500">{profileForm.formState.errors.username.message}</p>
                       )}
                     </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label>Email</Label>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center gap-2 rounded-md border bg-muted px-3 py-2 text-sm text-muted-foreground">
-                        <Mail className="size-4" />
-                        {profile?.email}
+                    {/* Employee ID (read-only) */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-slate-600">Employee ID</Label>
+                      <Input
+                        readOnly
+                        value={profile?._id ? `BN-${profile._id.slice(-6).toUpperCase()}` : '-'}
+                        className="h-11 rounded-lg border-slate-200 bg-slate-50 font-mono text-xs text-slate-500 shadow-sm"
+                      />
+                    </div>
+
+                    {/* Last Login (mapped to "Date of Birth") */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-slate-600">Last Login</Label>
+                      <div className="relative">
+                        <Input
+                          readOnly
+                          value={profile?.lastLoginAt ? new Date(profile.lastLoginAt).toLocaleDateString('en-US') : '-'}
+                          className="h-11 rounded-lg border-slate-200 bg-slate-50 pr-10 text-slate-500 shadow-sm"
+                        />
+                        <CalendarDays className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                       </div>
-                      {profile?.isEmailVerified ? (
-                        <Badge variant="default">Verified</Badge>
-                      ) : (
-                        <>
-                          <Badge variant="destructive">Not verified</Badge>
-                          <Button type="button" variant="outline" size="sm" onClick={openVerifyDialog}>
-                            Verify Email
-                          </Button>
-                        </>
-                      )}
+                    </div>
+
+                    {/* Time Zone */}
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold text-slate-600">Time Zone</Label>
+                      <div className="relative">
+                        <Input
+                          readOnly
+                          value="(GMT+07:00) Bangkok, Hanoi, Jakarta"
+                          className="h-11 rounded-lg border-slate-200 bg-slate-50 pr-10 text-slate-500 shadow-sm"
+                        />
+                        <Clock className="absolute right-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      </div>
                     </div>
                   </div>
+                </div>
+              </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <ShieldCheck className="size-4 text-slate-400" />
-                      {profile && ROLE_LABELS[profile.role]}
-                    </div>
-                    {profile && (
-                      <Badge variant={profile.status === 'ACTIVE' ? 'default' : 'secondary'}>
-                        {profile.status}
-                      </Badge>
-                    )}
-                  </div>
+              {/* ── About Me ── */}
+              <div className="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h3 className="mb-4 text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                  About Me
+                </h3>
+                <Textarea
+                  placeholder="Write a short bio about yourself..."
+                  maxLength={ABOUT_MAX}
+                  value={aboutMe}
+                  onChange={(e) => setAboutMe(e.target.value)}
+                  className="min-h-[110px] resize-none rounded-lg border-slate-200 text-sm shadow-sm"
+                />
+                <p className="mt-2 text-right text-xs text-slate-400">
+                  {aboutMe.length} / {ABOUT_MAX} characters
+                </p>
+              </div>
+            </form>
+          )}
 
-                  <Button type="submit" disabled={profileForm.formState.isSubmitting}>
-                    {profileForm.formState.isSubmitting && (
-                      <Loader2 className="size-4 animate-spin" />
-                    )}
-                    Save Changes
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
+          {/* ── Security tab ── */}
+          {activeTab === 'security' && (
+            <>
+              {/* Breadcrumb */}
+              <div className="mb-5 flex items-center gap-1.5 text-sm text-slate-400">
+                <span>Settings</span>
+                <ChevronRight className="size-3.5" />
+                <span>Security</span>
+                <ChevronRight className="size-3.5" />
+                <span className="font-semibold text-slate-700">Change Password</span>
+              </div>
 
-          <TabsContent value="security" className="mt-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Change Password</CardTitle>
-                <CardDescription>
-                  Update your password to keep your account secure.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {passwordError && <Alert variant="destructive">{passwordError}</Alert>}
-                {passwordSuccess && <Alert variant="success">{passwordSuccess}</Alert>}
+              <div className="mx-auto max-w-2xl rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
+                <h3 className="text-2xl font-bold text-slate-900">Change Password</h3>
+                <p className="mt-1.5 text-sm text-slate-500">
+                  Use a strong password to keep your admin account secure.
+                </p>
+
+                {passwordError && <Alert variant="destructive" className="mt-5">{passwordError}</Alert>}
+                {passwordSuccess && <Alert variant="success" className="mt-5">{passwordSuccess}</Alert>}
 
                 <form
-                  className="max-w-sm space-y-4"
+                  className="mt-8 space-y-6"
                   onSubmit={passwordForm.handleSubmit(onSubmitPassword)}
                   noValidate
                 >
+                  {/* Current Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="currentPassword">Current Password</Label>
-                    <Input
-                      id="currentPassword"
-                      type="password"
-                      autoComplete="current-password"
-                      aria-invalid={!!passwordForm.formState.errors.currentPassword}
-                      {...passwordForm.register('currentPassword')}
-                    />
+                    <Label htmlFor="currentPassword" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                      Current Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        id="currentPassword"
+                        type={showCurrentPw ? 'text' : 'password'}
+                        placeholder="Enter current password"
+                        autoComplete="current-password"
+                        aria-invalid={!!passwordForm.formState.errors.currentPassword}
+                        className="h-12 rounded-lg border-slate-200 pl-10 pr-11 shadow-sm"
+                        {...passwordForm.register('currentPassword')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPw((v) => !v)}
+                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600"
+                      >
+                        {showCurrentPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                     {passwordForm.formState.errors.currentPassword && (
-                      <p className="text-sm text-destructive">
-                        {passwordForm.formState.errors.currentPassword.message}
-                      </p>
+                      <p className="text-xs text-red-500">{passwordForm.formState.errors.currentPassword.message}</p>
                     )}
                   </div>
 
+                  {/* New Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="newPassword">New Password</Label>
-                    <Input
-                      id="newPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      aria-invalid={!!passwordForm.formState.errors.newPassword}
-                      {...passwordForm.register('newPassword')}
-                    />
+                    <Label htmlFor="newPassword" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                      New Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        id="newPassword"
+                        type={showNewPw ? 'text' : 'password'}
+                        placeholder="Enter new password"
+                        autoComplete="new-password"
+                        aria-invalid={!!passwordForm.formState.errors.newPassword}
+                        className="h-12 rounded-lg border-slate-200 pl-10 pr-11 shadow-sm"
+                        {...passwordForm.register('newPassword')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPw((v) => !v)}
+                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600"
+                      >
+                        {showNewPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      Must be at least 6 characters with 1 number and 1 symbol
+                    </p>
                     {passwordForm.formState.errors.newPassword && (
-                      <p className="text-sm text-destructive">
-                        {passwordForm.formState.errors.newPassword.message}
-                      </p>
+                      <p className="text-xs text-red-500">{passwordForm.formState.errors.newPassword.message}</p>
                     )}
                   </div>
 
+                  {/* Confirm New Password */}
                   <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                    <Input
-                      id="confirmPassword"
-                      type="password"
-                      autoComplete="new-password"
-                      aria-invalid={!!passwordForm.formState.errors.confirmPassword}
-                      {...passwordForm.register('confirmPassword')}
-                    />
+                    <Label htmlFor="confirmPassword" className="text-[11px] font-bold uppercase tracking-widest text-slate-400">
+                      Confirm New Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPw ? 'text' : 'password'}
+                        placeholder="Re-type new password"
+                        autoComplete="new-password"
+                        aria-invalid={!!passwordForm.formState.errors.confirmPassword}
+                        className="h-12 rounded-lg border-slate-200 pl-10 pr-11 shadow-sm"
+                        {...passwordForm.register('confirmPassword')}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPw((v) => !v)}
+                        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 hover:text-slate-600"
+                      >
+                        {showConfirmPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                     {passwordForm.formState.errors.confirmPassword && (
-                      <p className="text-sm text-destructive">
-                        {passwordForm.formState.errors.confirmPassword.message}
-                      </p>
+                      <p className="text-xs text-red-500">{passwordForm.formState.errors.confirmPassword.message}</p>
                     )}
                   </div>
 
-                  <Button type="submit" disabled={passwordForm.formState.isSubmitting}>
-                    {passwordForm.formState.isSubmitting && (
-                      <Loader2 className="size-4 animate-spin" />
-                    )}
-                    Change Password
-                  </Button>
+                  {/* Submit */}
+                  <div className="flex justify-end">
+                    <Button
+                      type="submit"
+                      disabled={passwordForm.formState.isSubmitting}
+                      className="h-11 gap-2 rounded-lg bg-orange-500 px-8 text-sm font-semibold text-white shadow-md shadow-orange-200 hover:bg-orange-600"
+                    >
+                      {passwordForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
+                      Update Password
+                    </Button>
+                  </div>
                 </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+
+              </div>
+
+              {/* Footer info */}
+              <p className="mt-6 text-center text-xs text-slate-400">
+                Last password change: {profile?.lastLoginAt
+                  ? new Date(profile.lastLoginAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : 'N/A'}
+              </p>
+            </>
+          )}
+
+          {/* ── Notifications tab (placeholder) ── */}
+          {activeTab === 'notifications' && (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-20 shadow-sm">
+              <Bell className="mb-3 size-10 text-slate-300" />
+              <p className="font-medium text-slate-500">Notification preferences</p>
+              <p className="text-sm text-slate-400">Coming soon</p>
+            </div>
+          )}
+
+          {/* ── Activity Log tab (placeholder) ── */}
+          {activeTab === 'activity' && (
+            <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-20 shadow-sm">
+              <FileText className="mb-3 size-10 text-slate-300" />
+              <p className="font-medium text-slate-500">Activity log</p>
+              <p className="text-sm text-slate-400">Coming soon</p>
+            </div>
+          )}
+
+          {/* ── Sticky footer ── */}
+          {activeTab === 'personal' && (
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-6 py-4 shadow-sm">
+              <div className="flex items-center gap-2 text-sm text-slate-400">
+                <Clock className="size-4" />
+                Last updated:{' '}
+                <span className="font-medium text-slate-600">
+                  {profile?.lastLoginAt
+                    ? new Date(profile.lastLoginAt).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true,
+                      })
+                    : 'N/A'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button type="button" variant="outline" onClick={handleDiscard}>
+                  Discard
+                </Button>
+                <Button
+                  type="button"
+                  onClick={profileForm.handleSubmit(onSubmitProfile)}
+                  disabled={profileForm.formState.isSubmitting}
+                  className="gap-2 bg-orange-500 text-white hover:bg-orange-600"
+                >
+                  {profileForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
+                  Save Profile
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
+      {/* ─── Verify Email Dialog ─────────────────────────────────────────── */}
       <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
         <DialogContent>
           <DialogHeader>
@@ -471,11 +793,7 @@ function SettingsPage() {
               </Button>
             </DialogFooter>
           ) : (
-            <form
-              className="space-y-4"
-              onSubmit={verifyForm.handleSubmit(onSubmitVerifyCode)}
-              noValidate
-            >
+            <form className="space-y-4" onSubmit={verifyForm.handleSubmit(onSubmitVerifyCode)} noValidate>
               <div className="space-y-2">
                 <Label htmlFor="verify-code">Verification Code</Label>
                 <Input
@@ -485,9 +803,7 @@ function SettingsPage() {
                   {...verifyForm.register('code')}
                 />
                 {verifyForm.formState.errors.code && (
-                  <p className="text-sm text-destructive">
-                    {verifyForm.formState.errors.code.message}
-                  </p>
+                  <p className="text-sm text-destructive">{verifyForm.formState.errors.code.message}</p>
                 )}
               </div>
               <DialogFooter>
@@ -496,9 +812,7 @@ function SettingsPage() {
                   Resend Code
                 </Button>
                 <Button type="submit" disabled={verifyForm.formState.isSubmitting}>
-                  {verifyForm.formState.isSubmitting && (
-                    <Loader2 className="size-4 animate-spin" />
-                  )}
+                  {verifyForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
                   Verify
                 </Button>
               </DialogFooter>
