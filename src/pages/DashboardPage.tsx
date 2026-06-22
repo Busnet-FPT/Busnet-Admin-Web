@@ -27,7 +27,7 @@ interface AdminInfo {
   username: string
   email: string
   fullName?: string
-  role: 'ADMIN' | 'SUPER_ADMIN'
+  role: 'ADMIN'
   status: string
   avatar?: string | null
   lastLoginAt?: string | null
@@ -136,7 +136,7 @@ function DashboardPage() {
         {[
           { label: 'Platform Revenue', value: loaded ? formatCurrency(stats.revenue) : null, icon: DollarSign, border: 'border-emerald-500', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
           { label: 'Total Bookings',   value: loaded ? String(totalTx) : null,               icon: TrendingUp, border: 'border-blue-500',    iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
-          { label: 'Active Partners',  value: loaded ? String(stats.partners) : null,         icon: Building2,  border: 'border-violet-500',  iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
+          { label: 'Total Partners',   value: loaded ? String(stats.partners) : null,         icon: Building2,  border: 'border-violet-500',  iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
           { label: 'Total Customers',  value: loaded ? String(stats.users) : null,            icon: Users,      border: 'border-cyan-500',    iconBg: 'bg-cyan-50',    iconColor: 'text-cyan-600'    },
           { label: 'Active Routes',    value: '-',                                            icon: MapPin,     border: 'border-amber-500',   iconBg: 'bg-amber-50',   iconColor: 'text-amber-600'   },
           { label: 'Pending Reports',  value: loaded ? String(stats.reports) : null,          icon: Flag,       border: 'border-red-500',     iconBg: 'bg-red-50',     iconColor: 'text-red-600'     },

@@ -61,7 +61,9 @@ import type {
 const STATUS_OPTIONS = [
   { value: 'ALL',       label: 'All Statuses' },
   { value: 'PENDING',   label: 'Pending'       },
+  { value: 'IN_REVIEW', label: 'In Review'     },
   { value: 'RESOLVED',  label: 'Resolved'      },
+  { value: 'REJECTED',  label: 'Rejected'      },
   { value: 'DISMISSED', label: 'Dismissed'     },
 ]
 
@@ -70,12 +72,18 @@ const TARGET_OPTIONS = [
   { value: 'OPERATOR', label: 'Operator'  },
   { value: 'BOOKING',  label: 'Booking'   },
   { value: 'TRIP',     label: 'Trip'      },
+  { value: 'PAYMENT',  label: 'Payment'   },
+  { value: 'SYSTEM',   label: 'System'    },
+  { value: 'OTHER',    label: 'Other'     },
 ]
 
 const TARGET_COLORS: Record<ReportTargetType, string> = {
   OPERATOR: 'bg-violet-50 text-violet-700 border-violet-200',
   BOOKING:  'bg-blue-50 text-blue-700 border-blue-200',
   TRIP:     'bg-teal-50 text-teal-700 border-teal-200',
+  PAYMENT:  'bg-amber-50 text-amber-700 border-amber-200',
+  SYSTEM:   'bg-red-50 text-red-700 border-red-200',
+  OTHER:    'bg-slate-50 text-slate-700 border-slate-200',
 }
 
 const EMPTY_PAGINATION: Pagination = { total: 0, page: 1, limit: 10, totalPages: 1 }
@@ -144,9 +152,9 @@ function ReportsPage() {
 
   /* ── Stats ── */
   const stats = useMemo(() => {
-    const pending  = reports.filter((r) => r.status === 'PENDING').length
+    const pending  = reports.filter((r) => r.status === 'PENDING' || r.status === 'IN_REVIEW').length
     const resolved = reports.filter((r) => r.status === 'RESOLVED').length
-    const dismissed = reports.filter((r) => r.status === 'DISMISSED').length
+    const dismissed = reports.filter((r) => r.status === 'DISMISSED' || r.status === 'REJECTED').length
     return { pending, resolved, dismissed }
   }, [reports])
 
@@ -218,7 +226,7 @@ function ReportsPage() {
                     <p className="mt-0.5 text-sm text-slate-400">Created {formatDate(selectedReport.createdAt)}</p>
                   </div>
                 </div>
-                {selectedReport.status === 'PENDING' && (
+                {(selectedReport.status === 'PENDING' || selectedReport.status === 'IN_REVIEW') && (
                   <div className="flex items-center gap-2">
                     <Button onClick={() => setPendingAction('RESOLVED')} className="gap-2 bg-emerald-600 hover:bg-emerald-700"><CheckCircle2 className="size-4" />Resolve</Button>
                     <Button variant="destructive" onClick={() => setPendingAction('DISMISSED')} className="gap-2"><XCircle className="size-4" />Dismiss</Button>
@@ -314,7 +322,7 @@ function ReportsPage() {
                   )}
 
                   {/* Action panel */}
-                  {pendingAction && selectedReport.status === 'PENDING' && (
+                  {pendingAction && (selectedReport.status === 'PENDING' || selectedReport.status === 'IN_REVIEW') && (
                     <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                       <h3 className="mb-4 text-xs font-bold uppercase tracking-widest text-slate-400">
                         {pendingAction === 'RESOLVED' ? 'Resolve Report' : 'Dismiss Report'}
@@ -345,9 +353,10 @@ function ReportsPage() {
                 {/* Right column */}
                 <div className="space-y-4">
                   {[
-                    { label: 'Status', value: selectedReport.status, icon: selectedReport.status === 'PENDING' ? Clock : selectedReport.status === 'RESOLVED' ? CheckCircle2 : XCircle,
-                      iconBg: selectedReport.status === 'PENDING' ? 'bg-amber-50' : selectedReport.status === 'RESOLVED' ? 'bg-emerald-50' : 'bg-red-50',
-                      iconColor: selectedReport.status === 'PENDING' ? 'text-amber-600' : selectedReport.status === 'RESOLVED' ? 'text-emerald-600' : 'text-red-600',
+                    { label: 'Status', value: selectedReport.status,
+                      icon: selectedReport.status === 'RESOLVED' ? CheckCircle2 : (selectedReport.status === 'DISMISSED' || selectedReport.status === 'REJECTED') ? XCircle : Clock,
+                      iconBg: selectedReport.status === 'RESOLVED' ? 'bg-emerald-50' : (selectedReport.status === 'DISMISSED' || selectedReport.status === 'REJECTED') ? 'bg-red-50' : 'bg-amber-50',
+                      iconColor: selectedReport.status === 'RESOLVED' ? 'text-emerald-600' : (selectedReport.status === 'DISMISSED' || selectedReport.status === 'REJECTED') ? 'text-red-600' : 'text-amber-600',
                       sub: selectedReport.resolvedAt ? `Since ${formatDate(selectedReport.resolvedAt)}` : 'Awaiting action' },
                     { label: 'Target Type', value: selectedReport.targetType, icon: FileText, iconBg: 'bg-violet-50', iconColor: 'text-violet-600', sub: `ID: ${selectedReport.targetId.slice(-8)}` },
                     { label: 'Evidence', value: String(selectedReport.evidence?.length ?? 0), icon: ImageIcon, iconBg: 'bg-blue-50', iconColor: 'text-blue-600', sub: 'Attachments' },

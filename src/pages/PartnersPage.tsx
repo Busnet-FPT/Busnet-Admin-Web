@@ -55,9 +55,10 @@ import type { PartnerDetail, PartnerListItem, Pagination } from '@/types/admin'
 /* ─── Constants ─────────────────────────────────────────────────────────── */
 
 const STATUS_OPTIONS = [
-  { value: 'ALL',              label: 'All statuses'     },
+  { value: 'ALL',              label: 'All Statuses'     },
   { value: 'ACTIVE',           label: 'Active'           },
   { value: 'BANNED',           label: 'Banned'           },
+  { value: 'DISABLED',         label: 'Disabled'         },
   { value: 'UNVERIFIED',       label: 'Unverified'       },
   { value: 'PENDING_APPROVAL', label: 'Pending Approval' },
 ]
@@ -84,19 +85,15 @@ function PartnerTableSkeleton() {
       {Array.from({ length: 6 }).map((_, i) => (
         <TableRow key={i}>
           <TableCell><Sk className="h-4 w-28" /></TableCell>
-          <TableCell>
-            <Sk className="mb-1.5 h-3.5 w-32" />
-            <Sk className="h-3 w-40" />
-          </TableCell>
-          <TableCell><Sk className="h-4 w-24" /></TableCell>
+          <TableCell><Sk className="h-4 w-32" /></TableCell>
+          <TableCell><Sk className="mx-auto h-4 w-8" /></TableCell>
+          <TableCell><Sk className="mx-auto h-4 w-8" /></TableCell>
+          <TableCell><Sk className="h-4 w-20" /></TableCell>
           <TableCell><Sk className="h-5 w-16 rounded-full" /></TableCell>
-          <TableCell><Sk className="h-4 w-5" /></TableCell>
-          <TableCell><Sk className="h-4 w-36" /></TableCell>
           <TableCell>
-            <div className="flex justify-end gap-2">
-              <Sk className="h-7 w-12 rounded-md" />
-              <Sk className="h-7 w-16 rounded-md" />
-              <Sk className="h-7 w-14 rounded-md" />
+            <div className="flex justify-center gap-2">
+              <Sk className="h-7 w-8 rounded-md" />
+              <Sk className="h-7 w-8 rounded-md" />
             </div>
           </TableCell>
         </TableRow>
@@ -383,8 +380,8 @@ function PartnersPage() {
             <TableRow className="bg-slate-800 hover:bg-slate-800">
               <TableHead className="rounded-tl-xl text-[11px] font-bold uppercase tracking-wider text-slate-300">Partner Logo + Name</TableHead>
               <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Contact Email</TableHead>
-              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-300">Total Buses</TableHead>
-              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-300">Total Routes</TableHead>
+              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-300">Rating</TableHead>
+              <TableHead className="text-center text-[11px] font-bold uppercase tracking-wider text-slate-300">Reviews</TableHead>
               <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Joined Date</TableHead>
               <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Status</TableHead>
               <TableHead className="rounded-tr-xl text-center text-[11px] font-bold uppercase tracking-wider text-slate-300">Action</TableHead>
@@ -434,14 +431,14 @@ function PartnersPage() {
                     {/* Email */}
                     <TableCell className="text-sm text-slate-600">{partner.email}</TableCell>
 
-                    {/* Buses */}
+                    {/* Rating */}
                     <TableCell className="text-center tabular-nums font-medium text-slate-700">
-                      {partner.partnerInformation?.totalReviews ?? '-'}
+                      {partner.partnerInformation?.ratingAvg?.toFixed(1) ?? '-'}
                     </TableCell>
 
-                    {/* Routes */}
+                    {/* Reviews */}
                     <TableCell className="text-center tabular-nums font-medium text-slate-700">
-                      {partner.banCounts ?? '-'}
+                      {partner.partnerInformation?.totalReviews ?? 0}
                     </TableCell>
 
                     {/* Joined Date */}
