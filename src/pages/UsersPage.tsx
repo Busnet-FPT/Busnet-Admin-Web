@@ -69,6 +69,7 @@ const STATUS_OPTIONS = [
 const BOOKING_COLORS: Record<string, string> = {
   PENDING_PAYMENT:       '#f59e0b',
   CONFIRMED:             '#3b82f6',
+  CANCEL_REQUESTED:      '#fb923c',
   COMPLETED:             '#10b981',
   CANCELLED_BY_CUSTOMER: '#ef4444',
   CANCELLED_BY_OPERATOR: '#f97316',
@@ -79,6 +80,7 @@ const BOOKING_COLORS: Record<string, string> = {
 const BOOKING_LABELS: Record<string, string> = {
   PENDING_PAYMENT:       'Pending Payment',
   CONFIRMED:             'Confirmed',
+  CANCEL_REQUESTED:      'Cancel Requested',
   COMPLETED:             'Completed',
   CANCELLED_BY_CUSTOMER: 'Cancelled (Customer)',
   CANCELLED_BY_OPERATOR: 'Cancelled (Operator)',

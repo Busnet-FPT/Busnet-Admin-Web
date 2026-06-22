@@ -64,7 +64,6 @@ type VerifyCodeFormValues = z.infer<typeof verifyCodeSchema>
 
 const ROLE_LABELS: Record<AdminProfile['role'], string> = {
   ADMIN: 'Administrator',
-  SUPER_ADMIN: 'Super Administrator',
 }
 
 const ABOUT_MAX = 250

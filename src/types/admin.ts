@@ -5,7 +5,7 @@ export interface AdminProfile {
   username: string
   email: string
   fullName?: string
-  role: 'ADMIN' | 'SUPER_ADMIN'
+  role: 'ADMIN'
   status: string
   avatar?: string | null
   isEmailVerified: boolean
@@ -152,8 +152,8 @@ export interface CustomerDetail {
 
 /* ─── Reports ────────────────────────────────────────────────────────────── */
 
-export type ReportTargetType = 'OPERATOR' | 'BOOKING' | 'TRIP'
-export type ReportStatus     = 'PENDING'  | 'RESOLVED' | 'DISMISSED'
+export type ReportTargetType = 'TRIP' | 'BOOKING' | 'OPERATOR' | 'PAYMENT' | 'SYSTEM' | 'OTHER'
+export type ReportStatus     = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED' | 'DISMISSED'
 
 export interface ReportReporter {
   _id: string
