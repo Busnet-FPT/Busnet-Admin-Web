@@ -3,6 +3,7 @@ import AdminLayout from '@/layouts/AdminLayout'
 import DashboardPage from '@/pages/DashboardPage'
 import UsersPage from '@/pages/UsersPage'
 import PartnersPage from '@/pages/PartnersPage'
+import LicenseApprovalsPage from '@/pages/LicenseApprovalsPage'
 import ReportsPage from '@/pages/ReportsPage'
 import SubscriptionsPage from '@/pages/SubscriptionsPage'
 import SettingsPage from '@/pages/SettingsPage'
@@ -62,6 +63,10 @@ export const router = createBrowserRouter([
           {
             path: 'partners',
             element: <PartnersPage />,
+          },
+          {
+            path: 'license-approvals',
+            element: <LicenseApprovalsPage />,
           },
           {
             path: 'reports',

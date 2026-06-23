@@ -181,3 +181,39 @@ export interface ReportListItem {
 export interface ReportDetail extends ReportListItem {
   resolvedBy: Pick<ReportReporter, '_id' | 'fullName' | 'email'> | null
 }
+
+/* ─── Pending License Reviews ────────────────────────────────────────────── */
+
+export interface PendingRegistrationListItem {
+  _id: string
+  accountId: {
+    _id: string
+    email: string
+    fullName?: string
+    phone?: string
+    status: string
+    createdAt: string
+  }
+  operatorName: string
+  operatorPhone?: string
+  licenseStatus: 'PENDING' | 'APPROVED' | 'REJECTED'
+  businessLicense?: string | null
+  taxCode?: string | null
+  selectedPlanId?: {
+    _id: string
+    planName: string
+    price: number
+    discount: number
+    durationDays: number
+  } | null
+  reviewedBy?: {
+    _id: string
+    fullName?: string
+    email: string
+  } | null
+  reviewedAt?: string | null
+  rejectionReason?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
