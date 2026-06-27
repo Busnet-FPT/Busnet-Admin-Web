@@ -6,6 +6,7 @@ import PartnersPage from '@/pages/PartnersPage'
 import LicenseApprovalsPage from '@/pages/LicenseApprovalsPage'
 import ReportsPage from '@/pages/ReportsPage'
 import SubscriptionsPage from '@/pages/SubscriptionsPage'
+import BlogApprovalsPage from '@/pages/BlogApprovalsPage'
 import SettingsPage from '@/pages/SettingsPage'
 import LoginPage from '@/pages/LoginPage'
 import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
@@ -67,6 +68,10 @@ export const router = createBrowserRouter([
           {
             path: 'license-approvals',
             element: <LicenseApprovalsPage />,
+          },
+          {
+            path: 'blog-approvals',
+            element: <BlogApprovalsPage />,
           },
           {
             path: 'reports',

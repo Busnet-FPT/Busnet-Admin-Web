@@ -217,3 +217,31 @@ export interface PendingRegistrationListItem {
   updatedAt: string
 }
 
+/* ─── Blog Approvals ─────────────────────────────────────────────────────── */
+
+export type BlogStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'REJECTED'
+
+export interface BlogAuthor {
+  _id: string
+  fullName?: string
+  email: string
+  profilePicture?: string | null
+}
+
+export interface BlogListItem {
+  _id: string
+  title: string
+  slug: string
+  summary?: string
+  coverImage: string
+  tag: string
+  status: BlogStatus
+  rejectionReason?: string | null
+  authorId: BlogAuthor
+  partnerName?: string
+  views: number
+  publishedAt?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
