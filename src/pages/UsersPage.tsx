@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Calendar,
   CheckCircle2,
@@ -126,6 +126,7 @@ function CustomerTableSkeleton() {
 function UsersPage() {
   const [customers,  setCustomers]  = useState<CustomerListItem[]>([])
   const [pagination, setPagination] = useState<Pagination>(EMPTY_PAGINATION)
+  const [stats,      setStats]      = useState({ active: 0, banned: 0, newThisMonth: 0 })
   const [page,       setPage]       = useState(1)
   const [search,     setSearch]     = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
@@ -176,19 +177,16 @@ function UsersPage() {
       .get('/admin/accounts', {
         params: { page, limit: 10, search: debouncedSearch || undefined, status: status === 'ALL' ? undefined : status },
       })
-      .then(({ data }) => { setCustomers(data.data.customers); setPagination(data.data.pagination) })
+      .then(({ data }) => {
+        setCustomers(data.data.customers)
+        setPagination(data.data.pagination)
+        setStats(data.data.stats)
+      })
       .catch((err) => setListError(getErrorMessage(err, 'Failed to load customers.')))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { fetchCustomers() }, [page, debouncedSearch, status]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Stats ── */
-  const stats = useMemo(() => {
-    const active = customers.filter((c) => c.status === 'ACTIVE').length
-    const banned = customers.filter((c) => c.status === 'BANNED').length
-    return { active, banned }
-  }, [customers])
 
   /* ── Detail ── */
   const openDetail = (id: string) => {
@@ -465,7 +463,7 @@ function UsersPage() {
         {[
           { label: 'Total Customers', value: pagination.total, sub: 'All registered',   icon: Users,        border: 'border-blue-500',    iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
           { label: 'Active Accounts', value: stats.active,     sub: 'Currently active', icon: CheckCircle2, border: 'border-emerald-500', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-          { label: 'New This Month',  value: '-',              sub: 'Recent signups',   icon: UserPlus,     border: 'border-violet-500',  iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
+          { label: 'New This Month',  value: stats.newThisMonth, sub: 'Recent signups',   icon: UserPlus,     border: 'border-violet-500',  iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
           { label: 'Suspended',       value: stats.banned,     sub: 'Requires review',  icon: ShieldAlert,  border: 'border-red-500',     iconBg: 'bg-red-50',     iconColor: 'text-red-600'     },
         ].map(({ label, value, sub, icon: Icon, border, iconBg, iconColor }) => (
           <div key={label} className={cn('rounded-xl border-l-4 bg-white p-5 shadow-sm', border)}>

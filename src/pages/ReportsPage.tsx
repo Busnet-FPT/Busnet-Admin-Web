@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   AlertCircle,
   Calendar,
@@ -116,6 +116,7 @@ function ReportTableSkeleton() {
 function ReportsPage() {
   const [reports,    setReports]    = useState<ReportListItem[]>([])
   const [pagination, setPagination] = useState<Pagination>(EMPTY_PAGINATION)
+  const [stats,      setStats]      = useState({ pending: 0, resolved: 0, dismissed: 0 })
   const [page,       setPage]       = useState(1)
   const [status,     setStatus]     = useState('ALL')
   const [targetType, setTargetType] = useState('ALL')
@@ -143,20 +144,16 @@ function ReportsPage() {
   const fetchReports = () => {
     setLoading(true); setListError(null)
     api.get('/admin/reports', { params: { page, limit: 10, status: status === 'ALL' ? undefined : status, targetType: targetType === 'ALL' ? undefined : targetType } })
-      .then(({ data }) => { setReports(data.data.reports ?? []); setPagination(data.data.pagination ?? EMPTY_PAGINATION) })
+      .then(({ data }) => {
+        setReports(data.data.reports ?? [])
+        setPagination(data.data.pagination ?? EMPTY_PAGINATION)
+        setStats(data.data.stats ?? { pending: 0, resolved: 0, dismissed: 0 })
+      })
       .catch((err) => setListError(getErrorMessage(err, 'Failed to load reports.')))
       .finally(() => setLoading(false))
   }
 
   useEffect(() => { fetchReports() }, [page, status, targetType]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  /* ── Stats ── */
-  const stats = useMemo(() => {
-    const pending  = reports.filter((r) => r.status === 'PENDING' || r.status === 'IN_REVIEW').length
-    const resolved = reports.filter((r) => r.status === 'RESOLVED').length
-    const dismissed = reports.filter((r) => r.status === 'DISMISSED' || r.status === 'REJECTED').length
-    return { pending, resolved, dismissed }
-  }, [reports])
 
   /* ── Detail ── */
   const openDetail = (id: string) => {
@@ -267,8 +264,14 @@ function ReportsPage() {
                           <span className={cn('mt-1 inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium', TARGET_COLORS[selectedReport.targetType])}>{selectedReport.targetType}</span>
                         </div>
                         <div>
-                          <p className="text-[11px] font-semibold text-slate-400">Target ID</p>
-                          <p className="mt-1 rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 w-fit">{selectedReport.targetId}</p>
+                          <p className="text-[11px] font-semibold text-slate-400">Linked Record</p>
+                          {selectedReport.target ? (
+                            <p className="mt-1 rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700 w-fit">
+                              {selectedReport.target.model}{selectedReport.target.label ? ` — ${selectedReport.target.label}` : ''} ({selectedReport.target.id.slice(-8)})
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-xs italic text-slate-400">No linked record</p>
+                          )}
                         </div>
                         {selectedReport.resolvedAt && (
                           <div>
@@ -358,7 +361,7 @@ function ReportsPage() {
                       iconBg: selectedReport.status === 'RESOLVED' ? 'bg-emerald-50' : (selectedReport.status === 'DISMISSED' || selectedReport.status === 'REJECTED') ? 'bg-red-50' : 'bg-amber-50',
                       iconColor: selectedReport.status === 'RESOLVED' ? 'text-emerald-600' : (selectedReport.status === 'DISMISSED' || selectedReport.status === 'REJECTED') ? 'text-red-600' : 'text-amber-600',
                       sub: selectedReport.resolvedAt ? `Since ${formatDate(selectedReport.resolvedAt)}` : 'Awaiting action' },
-                    { label: 'Target Type', value: selectedReport.targetType, icon: FileText, iconBg: 'bg-violet-50', iconColor: 'text-violet-600', sub: `ID: ${selectedReport.targetId.slice(-8)}` },
+                    { label: 'Target Type', value: selectedReport.targetType, icon: FileText, iconBg: 'bg-violet-50', iconColor: 'text-violet-600', sub: selectedReport.target ? `ID: ${selectedReport.target.id.slice(-8)}` : 'No linked record' },
                     { label: 'Evidence', value: String(selectedReport.evidence?.length ?? 0), icon: ImageIcon, iconBg: 'bg-blue-50', iconColor: 'text-blue-600', sub: 'Attachments' },
                     { label: 'Created', value: new Date(selectedReport.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), icon: Calendar, iconBg: 'bg-slate-100', iconColor: 'text-slate-600', sub: new Date(selectedReport.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) },
                   ].map(({ label, value, icon: Icon, iconBg, iconColor, sub }) => (
