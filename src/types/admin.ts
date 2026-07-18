@@ -115,6 +115,7 @@ export interface SubscriptionPlan {
   isPopular: boolean
   status: 'ACTIVE' | 'INACTIVE' | 'DELETED'
   chartColor?: string | null
+  activeSubscriberCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -164,10 +165,16 @@ export interface ReportReporter {
   profilePicture?: string | null
 }
 
+export interface ReportTarget {
+  model: 'Trip' | 'Booking' | 'Account' | 'Transaction'
+  id: string
+  label: string | null
+}
+
 export interface ReportListItem {
   _id: string
   targetType: ReportTargetType
-  targetId: string
+  target: ReportTarget | null
   reason: string
   description?: string
   status: ReportStatus

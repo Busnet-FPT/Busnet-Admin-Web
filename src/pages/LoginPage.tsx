@@ -30,12 +30,23 @@ const loginSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
+const verifyLoginSchema = z.object({
+  code: z.string().length(6, 'Code must be exactly 6 digits').regex(/^\d{6}$/, 'Code must contain only digits'),
+})
+
 type LoginFormValues = z.infer<typeof loginSchema>
+type VerifyLoginFormValues = z.infer<typeof verifyLoginSchema>
 
 function LoginPage() {
   const navigate = useNavigate()
   const [showPassword, setShowPassword] = useState(false)
   const [apiError, setApiError] = useState<string | null>(null)
+
+  // Set once login() responds with requiresVerification: true (admin was
+  // previously locked out and still hasn't verified their email) — switches
+  // the form to the post-login code-confirmation step for that address.
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
+  const [verifyNotice, setVerifyNotice] = useState<string | null>(null)
 
   const {
     register,
@@ -45,11 +56,22 @@ function LoginPage() {
     resolver: zodResolver(loginSchema),
   })
 
+  const verifyForm = useForm<VerifyLoginFormValues>({ resolver: zodResolver(verifyLoginSchema) })
+
   const onSubmit = async (values: LoginFormValues) => {
     setApiError(null)
 
     try {
       const { data } = await api.post('/admin/auth/login', values)
+
+      if (data.data?.requiresVerification) {
+        setPendingEmail(data.data.email)
+        setVerifyNotice(data.message || 'Please confirm the code sent to your email to finish logging in.')
+        // Some browsers auto-fill this new field with the just-typed email
+        // (same DOM position as the field it replaced) — force it blank.
+        verifyForm.reset({ code: '' })
+        return
+      }
 
       localStorage.setItem('adminToken', data.data.token)
       localStorage.setItem('adminInfo', JSON.stringify(data.data.admin))
@@ -57,6 +79,21 @@ function LoginPage() {
       navigate('/', { replace: true })
     } catch (error) {
       setApiError(getErrorMessage(error, 'Invalid email or password. Please try again.'))
+    }
+  }
+
+  const onSubmitVerifyLogin = async (values: VerifyLoginFormValues) => {
+    setApiError(null)
+
+    try {
+      const { data } = await api.post('/admin/auth/verify-login', { email: pendingEmail, code: values.code })
+
+      localStorage.setItem('adminToken', data.data.token)
+      localStorage.setItem('adminInfo', JSON.stringify(data.data.admin))
+
+      navigate('/', { replace: true })
+    } catch (error) {
+      setApiError(getErrorMessage(error, 'Failed to verify code.'))
     }
   }
 
@@ -163,9 +200,13 @@ function LoginPage() {
               <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-blue-600 shadow-md shadow-blue-200">
                 <Shield className="size-5 text-white" />
               </div>
-              <h2 className="text-xl font-bold text-slate-900">Admin Sign In</h2>
+              <h2 className="text-xl font-bold text-slate-900">
+                {pendingEmail ? 'Confirm Your Identity' : 'Admin Sign In'}
+              </h2>
               <p className="mt-1.5 text-sm text-slate-500">
-                Enter your credentials to access the administration panel.
+                {pendingEmail
+                  ? `Enter the 6-digit code sent to ${pendingEmail}.`
+                  : 'Enter your credentials to access the administration panel.'}
               </p>
             </div>
 
@@ -177,6 +218,66 @@ function LoginPage() {
               </div>
             )}
 
+            {!apiError && verifyNotice && pendingEmail && (
+              <div className="mb-5 flex items-center gap-2.5 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+                <ShieldCheck className="size-4 shrink-0" />
+                {verifyNotice}
+              </div>
+            )}
+
+            {pendingEmail ? (
+              <form className="space-y-5" onSubmit={verifyForm.handleSubmit(onSubmitVerifyLogin)} noValidate>
+                <div className="space-y-2">
+                  <label htmlFor="verify-code" className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+                    <ShieldCheck className="size-3.5 text-slate-400" />
+                    Verification Code
+                  </label>
+                  <Input
+                    id="verify-code"
+                    maxLength={6}
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    aria-invalid={!!verifyForm.formState.errors.code}
+                    className="h-11 rounded-lg border-slate-200 bg-white text-center font-mono text-lg tracking-[0.4em] shadow-sm focus-visible:ring-blue-500"
+                    {...verifyForm.register('code')}
+                    onChange={(e) => {
+                      e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                      verifyForm.register('code').onChange(e)
+                    }}
+                  />
+                  {verifyForm.formState.errors.code && (
+                    <p className="text-xs text-red-500">{verifyForm.formState.errors.code.message}</p>
+                  )}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={verifyForm.formState.isSubmitting}
+                  className="h-11 w-full gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-400 text-sm font-semibold text-white shadow-md shadow-orange-200 transition-all hover:from-orange-600 hover:to-orange-500 hover:shadow-lg hover:shadow-orange-200"
+                >
+                  {verifyForm.formState.isSubmitting ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <LogIn className="size-4" />
+                  )}
+                  Verify &amp; Sign In
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingEmail(null)
+                    setVerifyNotice(null)
+                    setApiError(null)
+                    verifyForm.reset()
+                  }}
+                  className="w-full text-center text-sm font-medium text-blue-600 hover:underline"
+                >
+                  Back to login
+                </button>
+              </form>
+            ) : (
             <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
 
               {/* Email */}
@@ -257,6 +358,7 @@ function LoginPage() {
                 Sign In
               </Button>
             </form>
+            )}
 
             {/* Security notice */}
             <div className="mt-5 flex items-start gap-2.5 rounded-lg border border-slate-200 bg-white px-4 py-3">
