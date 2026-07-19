@@ -61,8 +61,25 @@ const EMPTY_PAGINATION: Pagination = { total: 0, page: 1, limit: 10, totalPages:
 
 const isImageFile = (url?: string | null) => {
   if (!url) return false
-  const ext = url.split('.').pop()?.toLowerCase()
-  return ext ? ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) : false
+  // Check extension in URL
+  const ext = url.split('?')[0].split('.').pop()?.toLowerCase()
+  if (ext && ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) return true
+  // Cloudinary image URLs contain /image/upload/ in the path
+  if (url.includes('/image/upload/')) return true
+  return false
+}
+
+/**
+ * For Cloudinary raw file URLs, insert fl_attachment:filename to force download
+ * with a meaningful filename instead of the random Cloudinary public_id.
+ * Example: .../raw/upload/v123/folder/abc123 → .../raw/upload/fl_attachment:BusinessLicense.pdf/v123/folder/abc123
+ */
+const getViewableUrl = (url?: string | null) => {
+  if (!url) return '#'
+  if (url.includes('/raw/upload/')) {
+    return url.replace('/raw/upload/', '/raw/upload/fl_attachment:BusinessLicense.pdf/')
+  }
+  return url
 }
 
 /* ─── Skeleton ───────────────────────────────────────────────────────────── */
@@ -518,7 +535,7 @@ function LicenseApprovalsPage() {
                       />
                       <div className="mt-3">
                         <a
-                          href={detail.businessLicense}
+                          href={getViewableUrl(detail.businessLicense)}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:underline"
@@ -537,7 +554,7 @@ function LicenseApprovalsPage() {
                         <p className="mt-0.5 text-xs text-slate-400">PDF, Word, or other file formats</p>
                       </div>
                       <a
-                        href={detail.businessLicense}
+                        href={getViewableUrl(detail.businessLicense)}
                         target="_blank"
                         rel="noreferrer"
                         className="inline-flex h-9 items-center justify-center rounded-lg bg-blue-600 px-4 text-xs font-semibold text-white shadow transition-colors hover:bg-blue-700"

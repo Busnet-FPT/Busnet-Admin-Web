@@ -153,7 +153,7 @@ export interface CustomerDetail {
 /* ─── Reports ────────────────────────────────────────────────────────────── */
 
 export type ReportTargetType = 'TRIP' | 'BOOKING' | 'OPERATOR' | 'PAYMENT' | 'SYSTEM' | 'OTHER'
-export type ReportStatus     = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED' | 'DISMISSED'
+export type ReportStatus = 'PENDING' | 'IN_REVIEW' | 'RESOLVED' | 'REJECTED' | 'DISMISSED'
 
 export interface ReportReporter {
   _id: string
