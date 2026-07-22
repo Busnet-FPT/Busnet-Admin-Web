@@ -182,7 +182,8 @@ function SubscriptionsPage() {
   const stats = useMemo(() => {
     const active = plans.filter((p) => p.status === 'ACTIVE').length
     const totalRevenue = plans.reduce((s, p) => s + (p.status === 'ACTIVE' ? p.price : 0), 0)
-    return { total: plans.length, active, totalRevenue }
+    const totalSubscribers = plans.reduce((s, p) => s + (p.activeSubscriberCount || 0), 0)
+    return { total: plans.length, active, totalRevenue, totalSubscribers }
   }, [plans])
 
   /* ── Filtered plans ── */
@@ -253,10 +254,13 @@ function SubscriptionsPage() {
   /* ── Status toggle ── */
   const openStatusToggle = (plan: SubscriptionPlan) => {
     const next = plan.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE'
+    const subscriberWarning = next === 'INACTIVE' && plan.activeSubscriberCount
+      ? ` ${plan.activeSubscriberCount} partner(s) are currently subscribed — they'll keep this plan until it expires, but no new partner will be able to subscribe to it.`
+      : ''
     setConfirmError(null)
     setConfirmAction({
       title: next === 'ACTIVE' ? 'Activate Plan' : 'Deactivate Plan',
-      description: `This will ${next === 'ACTIVE' ? 'activate' : 'deactivate'} "${plan.planName}".`,
+      description: `This will ${next === 'ACTIVE' ? 'activate' : 'deactivate'} "${plan.planName}".${subscriberWarning}`,
       confirmLabel: next === 'ACTIVE' ? 'Activate' : 'Deactivate',
       onConfirm: async () => {
         const { data } = await api.patch(`/admin/subscriptions/${plan._id}/status`, { status: next })
@@ -268,10 +272,13 @@ function SubscriptionsPage() {
 
   /* ── Delete ── */
   const openDeleteConfirm = (plan: SubscriptionPlan) => {
+    const subscriberWarning = plan.activeSubscriberCount
+      ? ` ${plan.activeSubscriberCount} partner(s) are actively subscribed — deletion will be blocked until they're deactivated or their subscriptions lapse.`
+      : ''
     setConfirmError(null)
     setConfirmAction({
       title: 'Delete Plan',
-      description: `This will soft-delete "${plan.planName}".`,
+      description: `This will soft-delete "${plan.planName}".${subscriberWarning}`,
       confirmLabel: 'Delete',
       variant: 'destructive',
       onConfirm: async () => {
@@ -688,7 +695,7 @@ function SubscriptionsPage() {
         {[
           { label: 'Total Plans',       value: String(stats.total),                   sub: 'Global availability', icon: Calendar,     border: 'border-blue-500',   iconBg: 'bg-blue-50',    iconColor: 'text-blue-600'    },
           { label: 'Active Plans',      value: String(stats.active),                  sub: 'Healthy status',      icon: CheckCircle2, border: 'border-emerald-500', iconBg: 'bg-emerald-50', iconColor: 'text-emerald-600' },
-          { label: 'Total Subscribers', value: '-',                                   sub: 'All partners',        icon: Users,        border: 'border-violet-500', iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
+          { label: 'Total Subscribers', value: String(stats.totalSubscribers),        sub: 'Active across all plans', icon: Users,   border: 'border-violet-500', iconBg: 'bg-violet-50',  iconColor: 'text-violet-600'  },
           { label: 'Monthly Revenue',   value: formatCurrency(stats.totalRevenue),    sub: 'Active plans sum',    icon: DollarSign,   border: 'border-amber-500',  iconBg: 'bg-amber-50',   iconColor: 'text-amber-600'   },
         ].map(({ label, value, sub, icon: Icon, border, iconBg, iconColor }) => (
           <div key={label} className={cn('rounded-xl border-l-4 bg-white p-5 shadow-sm', border)}>

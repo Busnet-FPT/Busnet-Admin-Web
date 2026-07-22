@@ -115,6 +115,7 @@ export interface SubscriptionPlan {
   isPopular: boolean
   status: 'ACTIVE' | 'INACTIVE' | 'DELETED'
   chartColor?: string | null
+  activeSubscriberCount?: number
   createdAt: string
   updatedAt: string
 }
@@ -164,10 +165,16 @@ export interface ReportReporter {
   profilePicture?: string | null
 }
 
+export interface ReportTarget {
+  model: 'Trip' | 'Booking' | 'Account' | 'Transaction'
+  id: string
+  label: string | null
+}
+
 export interface ReportListItem {
   _id: string
   targetType: ReportTargetType
-  targetId: string
+  target: ReportTarget | null
   reason: string
   description?: string
   status: ReportStatus
@@ -213,6 +220,34 @@ export interface PendingRegistrationListItem {
   } | null
   reviewedAt?: string | null
   rejectionReason?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+/* ─── Blog Approvals ─────────────────────────────────────────────────────── */
+
+export type BlogStatus = 'DRAFT' | 'PENDING_APPROVAL' | 'PUBLISHED' | 'REJECTED'
+
+export interface BlogAuthor {
+  _id: string
+  fullName?: string
+  email: string
+  profilePicture?: string | null
+}
+
+export interface BlogListItem {
+  _id: string
+  title: string
+  slug: string
+  summary?: string
+  coverImage: string
+  tag: string
+  status: BlogStatus
+  rejectionReason?: string | null
+  authorId: BlogAuthor
+  partnerName?: string
+  views: number
+  publishedAt?: string | null
   createdAt: string
   updatedAt: string
 }

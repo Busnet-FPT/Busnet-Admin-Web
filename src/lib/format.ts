@@ -1,5 +1,5 @@
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'VND' }).format(amount)
+  return `${new Intl.NumberFormat('en-US').format(amount)} VND`
 }
 
 export function formatDate(value?: string | null): string {

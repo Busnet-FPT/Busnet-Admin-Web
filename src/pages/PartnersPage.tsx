@@ -58,7 +58,6 @@ const STATUS_OPTIONS = [
   { value: 'ALL',              label: 'All Statuses'     },
   { value: 'ACTIVE',           label: 'Active'           },
   { value: 'BANNED',           label: 'Banned'           },
-  { value: 'DISABLED',         label: 'Disabled'         },
   { value: 'UNVERIFIED',       label: 'Unverified'       },
   { value: 'PENDING_APPROVAL', label: 'Pending Approval' },
 ]

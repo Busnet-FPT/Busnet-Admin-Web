@@ -1,18 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  Bell,
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
   Clock,
   Eye,
   EyeOff,
-  FileText,
   ImageIcon,
   Loader2,
   Lock,
+  Mail,
+  ShieldCheck,
   Trash2,
   Upload,
   User,
@@ -33,6 +35,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import api from '@/services/api'
+import { cn } from '@/lib/utils'
 import { getErrorMessage } from '@/lib/errors'
 import type { AdminProfile } from '@/types/admin'
 
@@ -55,8 +58,12 @@ const passwordSchema = z
   })
 
 const verifyCodeSchema = z.object({
-  code: z.string().min(1, 'Please enter the verification code'),
+  code: z.string()
+    .length(6, 'Code must be exactly 6 digits')
+    .regex(/^\d{6}$/, 'Code must contain only digits'),
 })
+
+const DEFAULT_RESEND_COOLDOWN_SECONDS = 60
 
 type ProfileFormValues = z.infer<typeof profileSchema>
 type PasswordFormValues = z.infer<typeof passwordSchema>
@@ -70,18 +77,17 @@ const ABOUT_MAX = 250
 
 /* ─── Tab definitions ───────────────────────────────────────────────────── */
 
-type TabKey = 'personal' | 'security' | 'notifications' | 'activity'
+type TabKey = 'personal' | 'security'
 
 const TABS: { key: TabKey; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { key: 'personal', label: 'Personal Info', icon: User },
   { key: 'security', label: 'Security', icon: Lock },
-  { key: 'notifications', label: 'Notifications', icon: Bell },
-  { key: 'activity', label: 'Activity Log', icon: FileText },
 ]
 
 /* ─── Page ──────────────────────────────────────────────────────────────── */
 
 function SettingsPage() {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<TabKey>('personal')
 
   const [profile, setProfile] = useState<AdminProfile | null>(null)
@@ -105,11 +111,15 @@ function SettingsPage() {
   const [verifyStep, setVerifyStep] = useState<'send' | 'code'>('send')
   const [verifyError, setVerifyError] = useState<string | null>(null)
   const [verifySuccess, setVerifySuccess] = useState<string | null>(null)
+
   const [sendingCode, setSendingCode] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
   const profileForm = useForm<ProfileFormValues>({ resolver: zodResolver(profileSchema) })
   const passwordForm = useForm<PasswordFormValues>({ resolver: zodResolver(passwordSchema) })
   const verifyForm = useForm<VerifyCodeFormValues>({ resolver: zodResolver(verifyCodeSchema) })
+  const watchedCode = verifyForm.watch('code') || ''
+  const isCodeValid = watchedCode.length === 6 && !verifyForm.formState.errors.code
 
   /* ── Fetch profile ── */
   const fetchProfile = () => {
@@ -217,15 +227,25 @@ function SettingsPage() {
   }
 
   /* ── Email verify ── */
+
+  // Ticks the resend cooldown down to 0 once a second while the dialog is open.
+  useEffect(() => {
+    if (!verifyOpen || resendCooldown <= 0) return
+    const t = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(t)
+  }, [verifyOpen, resendCooldown])
+
   const openVerifyDialog = () => {
     setVerifyOpen(true)
     setVerifyStep('send')
     setVerifyError(null)
     setVerifySuccess(null)
+    setResendCooldown(0)
     verifyForm.reset()
   }
 
   const handleSendCode = async () => {
+    if (resendCooldown > 0) return
     setSendingCode(true)
     setVerifyError(null)
     setVerifySuccess(null)
@@ -234,6 +254,8 @@ function SettingsPage() {
       const { data } = await api.post('/admin/auth/send-verify-email')
       setVerifySuccess(data.message || 'Verification code sent to your email.')
       setVerifyStep('code')
+      setResendCooldown(data.data?.resendCooldownSeconds || DEFAULT_RESEND_COOLDOWN_SECONDS)
+      verifyForm.reset()
     } catch (error) {
       setVerifyError(getErrorMessage(error, 'Failed to send verification code.'))
     } finally {
@@ -253,9 +275,21 @@ function SettingsPage() {
       }
 
       setVerifySuccess(data.message || 'Email verified successfully.')
-      setTimeout(() => { setVerifyOpen(false) }, 1000)
+      setTimeout(() => { setVerifyOpen(false) }, 2000)
     } catch (error) {
-      setVerifyError(getErrorMessage(error, 'Failed to verify email.'))
+      const message = getErrorMessage(error, 'Failed to verify email.')
+      setVerifyError(message)
+
+      // Exceeded the attempt limit: the account is now locked out. Sign the
+      // admin out and send them back to the login page rather than leaving
+      // them on a Settings page they can no longer do anything useful on.
+      if (message.toLowerCase().includes('locked')) {
+        setTimeout(() => {
+          localStorage.removeItem('adminToken')
+          localStorage.removeItem('adminInfo')
+          navigate('/login', { replace: true })
+        }, 2500)
+      }
     }
   }
 
@@ -713,24 +747,6 @@ function SettingsPage() {
             </>
           )}
 
-          {/* ── Notifications tab (placeholder) ── */}
-          {activeTab === 'notifications' && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-20 shadow-sm">
-              <Bell className="mb-3 size-10 text-slate-300" />
-              <p className="font-medium text-slate-500">Notification preferences</p>
-              <p className="text-sm text-slate-400">Coming soon</p>
-            </div>
-          )}
-
-          {/* ── Activity Log tab (placeholder) ── */}
-          {activeTab === 'activity' && (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-slate-200 bg-white py-20 shadow-sm">
-              <FileText className="mb-3 size-10 text-slate-300" />
-              <p className="font-medium text-slate-500">Activity log</p>
-              <p className="text-sm text-slate-400">Coming soon</p>
-            </div>
-          )}
-
           {/* ── Sticky footer ── */}
           {activeTab === 'personal' && (
             <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white px-6 py-4 shadow-sm">
@@ -773,50 +789,95 @@ function SettingsPage() {
       <Dialog open={verifyOpen} onOpenChange={setVerifyOpen}>
         <DialogContent>
           <DialogHeader>
+            {/* Icon crossfades between the two real states of the flow — not
+                decorative, it reflects whether a code has been sent yet. */}
+            <div
+              key={verifyStep}
+              className="animate-scale-in flex size-11 items-center justify-center rounded-full bg-primary/10 text-primary"
+            >
+              {verifyStep === 'send' ? <Mail className="size-5" /> : <ShieldCheck className="size-5" />}
+            </div>
             <DialogTitle>Verify Email</DialogTitle>
             <DialogDescription>
-              {verifyStep === 'send'
-                ? 'We will send a verification code to your email address.'
-                : 'Enter the 6-digit verification code sent to your email.'}
+              {verifyStep === 'send' ? (
+                <>We&apos;ll send a verification code to <span className="font-medium text-foreground">{profile?.email}</span>.</>
+              ) : (
+                'Enter the 6-digit verification code sent to your email.'
+              )}
             </DialogDescription>
           </DialogHeader>
 
           {verifyError && <Alert variant="destructive">{verifyError}</Alert>}
           {verifySuccess && <Alert variant="success">{verifySuccess}</Alert>}
 
-          {verifyStep === 'send' ? (
-            <DialogFooter>
-              <Button type="button" onClick={handleSendCode} disabled={sendingCode}>
-                {sendingCode && <Loader2 className="size-4 animate-spin" />}
-                Send Verification Code
-              </Button>
-            </DialogFooter>
-          ) : (
-            <form className="space-y-4" onSubmit={verifyForm.handleSubmit(onSubmitVerifyCode)} noValidate>
-              <div className="space-y-2">
-                <Label htmlFor="verify-code">Verification Code</Label>
-                <Input
-                  id="verify-code"
-                  maxLength={6}
-                  aria-invalid={!!verifyForm.formState.errors.code}
-                  {...verifyForm.register('code')}
-                />
-                {verifyForm.formState.errors.code && (
-                  <p className="text-sm text-destructive">{verifyForm.formState.errors.code.message}</p>
-                )}
-              </div>
+          <div key={verifyStep} className="animate-fade-up">
+            {verifyStep === 'send' ? (
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleSendCode} disabled={sendingCode}>
-                  {sendingCode && <Loader2 className="size-4 animate-spin" />}
-                  Resend Code
-                </Button>
-                <Button type="submit" disabled={verifyForm.formState.isSubmitting}>
-                  {verifyForm.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />}
-                  Verify
+                <Button
+                  type="button"
+                  onClick={handleSendCode}
+                  disabled={sendingCode}
+                  className="gap-2 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  {sendingCode ? <Loader2 className="size-4 animate-spin" /> : <Mail className="size-4" />}
+                  {sendingCode ? 'Sending...' : 'Send Verification Code'}
                 </Button>
               </DialogFooter>
-            </form>
-          )}
+            ) : (
+              <form className="space-y-4" onSubmit={verifyForm.handleSubmit(onSubmitVerifyCode)} noValidate>
+                <div className="space-y-2">
+                  <Label htmlFor="verify-code">Verification Code</Label>
+                  <div className="group relative">
+                    {isCodeValid ? (
+                      <CheckCircle2 className="animate-scale-in pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-primary" />
+                    ) : (
+                      <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-primary" />
+                    )}
+                    <Input
+                      id="verify-code"
+                      maxLength={6}
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="123456"
+                      className={cn(
+                        'h-11 pl-9 text-base tracking-[0.3em] transition-shadow placeholder:tracking-normal',
+                        isCodeValid && 'border-primary focus-visible:border-primary focus-visible:ring-primary/20',
+                      )}
+                      aria-invalid={!!verifyForm.formState.errors.code}
+                      {...verifyForm.register('code')}
+                      onChange={(e) => {
+                        e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6)
+                        verifyForm.register('code').onChange(e)
+                      }}
+                    />
+                  </div>
+                  {verifyForm.formState.errors.code && (
+                    <p className="animate-fade-down text-sm text-destructive">{verifyForm.formState.errors.code.message}</p>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleSendCode}
+                    disabled={sendingCode || resendCooldown > 0}
+                    className="transition-all hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    {sendingCode && <Loader2 className="size-4 animate-spin" />}
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={verifyForm.formState.isSubmitting}
+                    className="gap-2 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                  >
+                    {verifyForm.formState.isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <ShieldCheck className="size-4" />}
+                    Verify
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
